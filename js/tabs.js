@@ -1,37 +1,74 @@
 // ─── タブレンダラー・インタラクション ───
 
 /* ── メトロノーム ── */
-let _metroTimer=null,_metroBeat=0;
+let _metroTimer=null,_metroBeat=0,_metroAccent=false;
+
+function _getMeterInfo(s){
+  const mv=s?.meter||'4/4';
+  const found=METERS.find(m=>m.v===mv);
+  if(found&&found.v!=='custom')return found;
+  // カスタム or 未登録 → 文字列からパース
+  const parts=(mv==='custom'?'4/4':mv).split('/').map(Number);
+  return{v:mv,beats:parts[0]||4,unit:parts[1]||4};
+}
+
+function _beatMs(s){
+  const m=_getMeterInfo(s);
+  return(60000/(s?.tempo||120))*(4/m.unit);
+}
 
 function toggleMetronome(){
   const btn=document.getElementById('metroBtn');
   if(_metroTimer){
     clearInterval(_metroTimer);_metroTimer=null;_metroBeat=0;
-    if(btn){btn.textContent='♩ メトロノーム';btn.style.background='';btn.style.color='';}
+    if(btn){btn.textContent='♩ メトロ';btn.style.background='';btn.style.color='';}
     return;
   }
   const s=cur();if(!s)return;
-  const bpm=s.tempo||120;
+  const m=_getMeterInfo(s);
+  const bms=_beatMs(s);
   const ctx=getAudioCtx();
   function tick(){
     const now=ctx.currentTime;
     const osc=ctx.createOscillator(),gain=ctx.createGain();
-    osc.frequency.value=_metroBeat%4===0?1400:900;
-    gain.gain.setValueAtTime(0.25,now);
+    const isAccentBeat=_metroAccent&&(_metroBeat%m.beats===0);
+    osc.frequency.value=isAccentBeat?1400:900;
+    const vol=isAccentBeat?0.3:0.18;
+    gain.gain.setValueAtTime(vol,now);
     gain.gain.exponentialRampToValueAtTime(0.001,now+0.04);
     osc.connect(gain);gain.connect(ctx.destination);
     osc.start(now);osc.stop(now+0.04);
     _metroBeat++;
   }
   tick();
-  _metroTimer=setInterval(tick,60000/bpm);
+  _metroTimer=setInterval(tick,bms);
   if(btn){btn.textContent='■ 停止';btn.style.background='rgba(30,184,160,.15)';btn.style.color='var(--teal)';}
+}
+
+function toggleMetroAccent(){
+  _metroAccent=!_metroAccent;
+  const btn=document.getElementById('accentBtn');
+  if(btn){
+    btn.textContent=_metroAccent?'強拍 ON':'強拍 OFF';
+    btn.style.borderColor=_metroAccent?'var(--amber)':'';
+    btn.style.color=_metroAccent?'var(--amber)':'';
+  }
 }
 
 function stopMetronome(){
   if(_metroTimer){clearInterval(_metroTimer);_metroTimer=null;_metroBeat=0;}
   const btn=document.getElementById('metroBtn');
-  if(btn){btn.textContent='♩ メトロノーム';btn.style.background='';btn.style.color='';}
+  if(btn){btn.textContent='♩ メトロ';btn.style.background='';btn.style.color='';}
+}
+function onMeterChange(v){
+  const wrap=document.getElementById('customMeterWrap');
+  if(v==='custom'){if(wrap)wrap.style.display='flex';}
+  else{if(wrap)wrap.style.display='none';upd(s=>s.meter=v);}
+}
+function applyCustomMeter(){
+  const v=document.getElementById('customMeterIn')?.value?.trim();
+  if(!v||!/^\d+\/\d+$/.test(v)){toast('⚠ 例: 7/4 の形式で入力してください');return;}
+  upd(s=>s.meter=v);toast(`✓ 拍子を ${v} に設定しました`);
 }
 
 /* ── 転調・複製 ── */
@@ -92,13 +129,14 @@ function stopSectionPlay(){
 function playMelSection(si){
   if(_playingSec!==null){stopSectionPlay();return;}
   const s=cur();if(!s)return;
-  const sec=s.sections[si];const bpm=s.tempo||120;const beatMs=60000/bpm;
+  const sec=s.sections[si];const beatMs=_beatMs(s);
+  const beatsPerMeas=_getMeterInfo(s).beats;
   _playingSec=si;
   const btn=document.getElementById(`mel-play-${si}`);
   if(btn){btn.textContent='■ 停止';btn.style.color='var(--coral)';btn.style.borderColor='var(--coral)';}
   let maxT=0;
   sec.measures.forEach((meas,mi)=>{
-    const measStart=mi*4*beatMs;
+    const measStart=mi*beatsPerMeas*beatMs;
     (meas.melNotes||[]).forEach(n=>{
       if(!n.pitch||n.pitch==='R')return;
       const t=measStart+(n.startBeat||0)*beatMs;
@@ -106,14 +144,15 @@ function playMelSection(si){
       maxT=Math.max(maxT,t+beatMs);
     });
   });
-  if(maxT===0)maxT=sec.measures.length*4*beatMs;
+  if(maxT===0)maxT=sec.measures.length*beatsPerMeas*beatMs;
   _playTimers.push(setTimeout(stopSectionPlay,maxT+300));
 }
 
 function playChordSection(si){
   if(_playingSec!==null){stopSectionPlay();return;}
   const s=cur();if(!s)return;
-  const sec=s.sections[si];const bpm=s.tempo||120;const measMs=(4*60000)/bpm;
+  const sec=s.sections[si];
+  const measMs=_getMeterInfo(s).beats*_beatMs(s);
   _playingSec=si;
   const btn=document.getElementById(`chord-play-${si}`);
   if(btn){btn.textContent='■ 停止';btn.style.color='var(--coral)';btn.style.borderColor='var(--coral)';}
@@ -154,7 +193,20 @@ function renderMelody(s){
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
   <div><label class="flbl">KEY</label><select class="inp" onchange="upd(s=>s.key=this.value)">${KEYS.map(k=>`<option${k===s.key?' selected':''}>${k}</option>`).join('')}</select></div>
   <div><label class="flbl">BPM</label><input type="number" class="inp" style="width:72px" value="${s.tempo}" min="40" max="300" onchange="upd(s=>s.tempo=parseInt(this.value)||120)"></div>
-  <div style="padding-bottom:2px"><button id="metroBtn" class="btn btn-g" style="font-size:11px;padding:6px 12px" onclick="toggleMetronome()">♩ メトロノーム</button></div>
+  <div>
+    <label class="flbl">拍子</label>
+    <div style="display:flex;gap:5px;align-items:center">
+      <select class="inp" id="meterSel" onchange="onMeterChange(this.value)">${METERS.map(m=>`<option value="${m.v}"${(s.meter||'4/4')===m.v?' selected':''}>${m.l}</option>`).join('')}</select>
+      <div id="customMeterWrap" style="display:${(s.meter&&!METERS.find(m=>m.v===s.meter))?'flex':'none'};gap:5px;align-items:center">
+        <input id="customMeterIn" class="inp" style="width:70px" placeholder="例: 7/4" value="${(!METERS.find(m=>m.v===(s.meter||'4/4')))?s.meter||'':''}" oninput="">
+        <button class="btn btn-g" style="font-size:10px;padding:5px 8px;white-space:nowrap" onclick="applyCustomMeter()">適用</button>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:5px;padding-bottom:2px">
+    <button id="metroBtn" class="btn btn-g" style="font-size:11px;padding:6px 10px" onclick="toggleMetronome()">♩ メトロ</button>
+    <button id="accentBtn" class="btn btn-g" style="font-size:11px;padding:6px 10px;${_metroAccent?'border-color:var(--amber);color:var(--amber)':''}" onclick="toggleMetroAccent()">${_metroAccent?'強拍 ON':'強拍 OFF'}</button>
+  </div>
 </div>
 ${s.sections.map((sec,si)=>`
 <div class="mel-sec">
@@ -164,7 +216,7 @@ ${s.sections.map((sec,si)=>`
   </div>
   <div style="margin-bottom:12px">
     <div class="staff-block">
-      ${melodyStaffSVG(sec.measures)}
+      ${melodyStaffSVG(sec.measures,'#1eb8a0',s.meter||'4/4')}
     </div>
   </div>
   <div class="mel-measures">
@@ -278,8 +330,17 @@ function renderNotePicker(){
   <div style="display:flex;gap:3px">${OCTAVES.map(o=>{const lbl={3:'低',4:'中',5:'高'};return`<button class="npk-note${selOct===o?' sel':''}" onclick="npSetOct(${o})" style="min-width:38px">${o}<span style="font-size:8px;opacity:.7;margin-left:2px">${lbl[o]||''}</span></button>`;}).join('')}</div>
 </div>
 
-<!-- 音価 -->
-<div class="npk-row"><span class="npk-lbl">音価</span><div class="dur-row">${DURS.map(d=>`<button class="dur-btn${npState.dur===d.v?' sel':''}" onclick="npSetDur('${d.v}')">${d.l}</button>`).join('')}</div></div>
+<!-- 音価（カテゴリ分け） -->
+<div style="margin-bottom:10px">
+  <div style="font-size:10px;color:var(--text2);font-family:var(--mono);margin-bottom:5px">音価</div>
+  ${['通常','付点','三連符'].map(cat=>{
+    const items=DURS.filter(d=>d.cat===cat);
+    return`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+      <span style="font-size:9px;color:var(--text3);font-family:var(--mono);width:38px;flex-shrink:0">${cat}</span>
+      <div style="display:flex;gap:3px;flex-wrap:wrap">${items.map(d=>`<button class="dur-btn${npState.dur===d.v?' sel':''}" onclick="npSetDur('${d.v}')">${d.l}</button>`).join('')}</div>
+    </div>`;
+  }).join('')}
+</div>
 
 <!-- 確定バー -->
 <div style="margin-top:10px;display:flex;gap:6px;align-items:center">
@@ -328,7 +389,7 @@ ${s.sections.map((sec,si)=>`
       <span class="cn">${m.chord||'–'}</span>
     </div>`).join('')}
   </div>
-  <div class="qr">${QP.map(p=>`<button class="qb" onclick="applyProg(${si},${JSON.stringify(p.c)})">${p.l}</button>`).join('')}</div>
+  <div class="qr">${QP.map((p,qi)=>`<button class="qb" onclick="applyProgByIdx(${si},${qi})">${p.l}</button>`).join('')}</div>
 </div>`).join('')}`;}
 
 function handleCC(e,si,mi,c){e.stopPropagation();closeAllPickers();const cell=document.getElementById(`cc_${si}_${mi}`);if(c)playChord(c,cell);openPicker(e,si,mi,c);}
@@ -348,10 +409,11 @@ function addSection(){upd(s=>s.sections.push({id:gid(),name:'新セクション'
 function delSection(si){upd(s=>{if(s.sections.length>1)s.sections.splice(si,1);});}
 function addMeasure(si){upd(s=>s.sections[si].measures.push({id:gid(),chord:'',melNotes:[]}));}
 function delMeasure(si,mi){upd(s=>{if(s.sections[si].measures.length>1)s.sections[si].measures.splice(mi,1);});closeAllPickers();}
+function applyProgByIdx(si,qi){applyProg(si,QP[qi].c);}
 function applyProg(si,cs){
   upd(s=>{
     s.sections[si].measures=cs.map((c,i)=>({
-      ...s.sections[si].measures[i],
+      ...(s.sections[si].measures[i]||{}),
       id:s.sections[si].measures[i]?.id||gid(),
       chord:c,
       melNotes:s.sections[si].measures[i]?.melNotes||[]
@@ -370,7 +432,7 @@ function renderAccomp(s){
   ${ac?`<button class="btn btn-t" onclick="exportMusicXML()">⬇ MusicXML出力 (Logic用)</button>`:''}
 </div>
 ${!ac?`<div style="text-align:center;padding:44px 20px"><div style="font-size:36px;margin-bottom:12px;opacity:.3">🎼</div><div style="color:var(--text3);font-size:12px;line-height:2;font-family:var(--mono)">楽器を選んで、伴奏を生成。<br><span style="font-size:10px">コードタブでコード進行を入れておくと精度UP</span></div></div>`
-:Object.entries(INSTRS).filter(([k])=>ac[k]).map(([k,v])=>`<div style="margin-bottom:20px"><div class="staff-part-lbl" style="color:${v.color}">▸ ${v.label}</div>${ac[k].sections?.map(sec=>`<div style="margin-bottom:12px"><div class="staff-sec-lbl">${sec.sectionName||sec.name||'SEC'}</div><div class="staff-block">${k==='piano'?grandStaffSVG(sec.measures,v.color):k==='drums'?drumStaffSVG(sec.measures):singleStaffSVG(sec.measures,k==='bass'?'bass':'treble',v.color)}</div></div>`).join('')}</div>`).join('')}`;}
+:Object.entries(INSTRS).filter(([k])=>ac[k]).map(([k,v])=>`<div style="margin-bottom:20px"><div class="staff-part-lbl" style="color:${v.color}">▸ ${v.label}</div>${ac[k].sections?.map(sec=>`<div style="margin-bottom:12px"><div class="staff-sec-lbl">${sec.sectionName||sec.name||'SEC'}</div><div class="staff-block">${k==='piano'?grandStaffSVG(sec.measures,v.color,s.meter||'4/4'):k==='drums'?drumStaffSVG(sec.measures):singleStaffSVG(sec.measures,k==='bass'?'bass':'treble',v.color,s.meter||'4/4')}</div></div>`).join('')}</div>`).join('')}`;}
 
 function toggleInstr(k){upd(s=>{const i=(s.selInstrs||[]).indexOf(k);if(i>=0)s.selInstrs.splice(i,1);else s.selInstrs.push(k);});}
 
@@ -472,7 +534,7 @@ ${!hasKey?`<div style="background:rgba(232,160,32,.08);border:1px solid rgba(232
 let _dictFilter='全て';
 let _dictPreviewTimers=[];
 
-const _DICT_GENRES=['全て','J-POP','ポップス','ロック','ジャズ','ブルース','クラシック','ソウル/R&B','映画音楽'];
+const _DICT_GENRES=['全て','J-POP','ポップス','ロック','ジャズ','ブルース','クラシック','ソウル/R&B','映画音楽','📚 音楽基礎'];
 const _MOOD_COLOR={'明るい':'#50c878','哀愁':'#3b82f6','切ない':'#9060e8','感動':'#e8a020',
   'ダーク':'#e05050','おしゃれ':'#1eb8a0','渋い':'#8a8070','壮大':'#7c3aed',
   '懐かしい':'#f0b840','グルーヴ':'#e05050','洗練':'#1eb8a0','叙情的':'#9060e8',
@@ -500,7 +562,8 @@ function openDictApply(idx){
   if(panel){panel.style.display=panel.style.display==='none'?'block':'none';return;}
 }
 
-function applyDictToSection(si,chords){
+function applyDictToSection(si,dictIdx){
+  const chords=CHORD_DICT[dictIdx].chords;
   upd(s=>{
     const sec=s.sections[si];
     const newMeas=chords.map((c,i)=>({
@@ -522,21 +585,49 @@ function applyDictToSection(si,chords){
   switchTab('chords');
 }
 
+function _renderMusicBasics(){
+  return`
+<div style="display:flex;flex-direction:column;gap:10px">
+${MUSIC_BASICS.map((item,idx)=>`
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:14px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+    <span style="font-size:22px;line-height:1">${item.icon}</span>
+    <div>
+      <div style="font-weight:700;font-size:13px">${esc(item.title)}</div>
+      <span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(30,184,160,.12);color:var(--teal);font-family:var(--mono);font-weight:700">音楽基礎</span>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:8px">${esc(item.body)}</div>
+  <div style="background:rgba(30,184,160,.07);border-left:3px solid var(--teal);border-radius:0 6px 6px 0;padding:7px 10px;font-size:10px;color:var(--teal);line-height:1.7">
+    💡 ${esc(item.tip)}
+  </div>
+</div>`).join('')}
+</div>`;
+}
+
 function renderDict(){
   const s=cur();
-  const filtered=_dictFilter==='全て'?CHORD_DICT:CHORD_DICT.filter(e=>e.genre.includes(_dictFilter));
+  const isBasics=_dictFilter==='📚 音楽基礎';
+  const filtered=isBasics?[]:(_dictFilter==='全て'?CHORD_DICT:CHORD_DICT.filter(e=>e.genre.includes(_dictFilter)));
   return`
 <div style="margin-bottom:14px">
-  <div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:4px">📖 コード進行辞典</div>
-  <div style="font-size:11px;color:var(--text3);line-height:1.7">世界の名曲・定番進行を学んで自分の曲に活用しよう。▶ で試聴、「使う」でコード進行タブに即反映。</div>
+  <div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:4px">📖 辞典</div>
+  <div style="font-size:11px;color:var(--text3);line-height:1.7">${isBasics?'音楽の基礎知識を学ぼう。理論がわかると作曲の幅が広がります。':'世界の名曲・定番進行を学んで自分の曲に活用しよう。▶ で試聴、「使う」でコード進行タブに即反映。'}</div>
 </div>
 
-<!-- ジャンルフィルター -->
+<!-- カテゴリ/ジャンルフィルター -->
 <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px">
-  ${_DICT_GENRES.map(g=>`<button class="btn" style="font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid ${_dictFilter===g?'var(--amber)':'var(--border2)'};background:${_dictFilter===g?'rgba(232,160,32,.15)':'transparent'};color:${_dictFilter===g?'var(--amber)':'var(--text3)'}" onclick="setDictFilter('${g}')">${g}</button>`).join('')}
+  ${_DICT_GENRES.map(g=>{
+    const isBasicsBtn=g==='📚 音楽基礎';
+    const isSel=_dictFilter===g;
+    const selColor=isBasicsBtn?'var(--teal)':'var(--amber)';
+    const selBg=isBasicsBtn?'rgba(30,184,160,.15)':'rgba(232,160,32,.15)';
+    return`<button class="btn" style="font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid ${isSel?selColor:'var(--border2)'};background:${isSel?selBg:'transparent'};color:${isSel?selColor:'var(--text3)'}" onclick="setDictFilter('${g}')">${g}</button>`;
+  }).join('')}
 </div>
 
-<!-- カード一覧 -->
+${isBasics?_renderMusicBasics():`
+<!-- コード進行カード一覧 -->
 <div style="display:flex;flex-direction:column;gap:10px">
 ${filtered.map((entry,idx)=>{
   const realIdx=CHORD_DICT.indexOf(entry);
@@ -568,12 +659,13 @@ ${filtered.map((entry,idx)=>{
   ${s?`<div id="dapply_${realIdx}" class="dapply-panel" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">
     <div style="font-size:10px;color:var(--text2);margin-bottom:6px;font-weight:700">どのセクションに適用する？</div>
     <div style="display:flex;gap:5px;flex-wrap:wrap">
-      ${s.sections.map((sec,si)=>`<button class="btn btn-g" style="font-size:10px;padding:4px 10px;border-color:var(--teal);color:var(--teal)" onclick="applyDictToSection(${si},${JSON.stringify(entry.chords)})">${esc(sec.name)}</button>`).join('')}
+      ${s.sections.map((sec,si)=>`<button class="btn btn-g" style="font-size:10px;padding:4px 10px;border-color:var(--teal);color:var(--teal)" onclick="applyDictToSection(${si},${realIdx})">${esc(sec.name)}</button>`).join('')}
     </div>
   </div>`:''}
 </div>`;
 }).join('')}
-</div>`;
+</div>`}
+`;
 }
 
 async function sendAI(text){

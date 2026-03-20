@@ -71,15 +71,16 @@ function renderNotes(notes,clef,mx,mw,sb,color){
   return s;
 }
 
-function singleStaffSVG(measures,clef,color){
+function singleStaffSVG(measures,clef,color,meter='4/4'){
+  const [mBeats,mUnit]=(meter||'4/4').split('/').map(Number);
   const PT=22,PB=20,staffTop=PT,staffBot=staffTop+4*SS,svgH=staffBot+PB;
   const CLEF_W=58,MW=152,w=CLEF_W+measures.length*MW+8;
   let svg=`<svg width="${w}" height="${svgH}" style="display:block">`;
   svg+=staveLines(2,staffTop,w-4);
   if(clef==='bass')svg+=`<text x="6" y="${staffTop+SS*3+5}" font-size="36" fill="#333" font-family="serif">𝄢</text>`;
   else svg+=`<text x="4" y="${staffTop+SS*5+8}" font-size="56" fill="#333" font-family="serif">𝄞</text>`;
-  svg+=`<text x="46" y="${staffTop+SS*2+2}" font-size="13" fill="#333" font-family="serif">4</text>`;
-  svg+=`<text x="46" y="${staffTop+SS*4+2}" font-size="13" fill="#333" font-family="serif">4</text>`;
+  svg+=`<text x="46" y="${staffTop+SS*2+2}" font-size="13" fill="#333" font-family="serif">${mBeats}</text>`;
+  svg+=`<text x="46" y="${staffTop+SS*4+2}" font-size="13" fill="#333" font-family="serif">${mUnit}</text>`;
   svg+=sLine(CLEF_W-3,staffTop,CLEF_W-3,staffBot,'#333',1.2);
   let x=CLEF_W;
   for(const meas of measures){
@@ -91,7 +92,8 @@ function singleStaffSVG(measures,clef,color){
   svg+='</svg>';return svg;
 }
 
-function grandStaffSVG(measures,color){
+function grandStaffSVG(measures,color,meter='4/4'){
+  const [mBeats,mUnit]=(meter||'4/4').split('/').map(Number);
   const PT=20,IGAP=18,PB=20,RHtop=PT,RHbot=RHtop+4*SS,LHtop=RHbot+IGAP,LHbot=LHtop+4*SS;
   const CLEF_W=64,MW=164,w=CLEF_W+measures.length*MW+8;
   let svg=`<svg width="${w}" height="${LHbot+PB}" style="display:block">`;
@@ -101,8 +103,8 @@ function grandStaffSVG(measures,color){
   svg+=`<text x="15" y="${RHtop+SS*5+8}" font-size="52" fill="#333" font-family="serif">𝄞</text>`;
   svg+=`<text x="15" y="${LHtop+SS*3+5}" font-size="34" fill="#333" font-family="serif">𝄢</text>`;
   [RHtop,LHtop].forEach(t=>{
-    svg+=`<text x="48" y="${t+SS*2+2}" font-size="13" fill="#333" font-family="serif">4</text>`;
-    svg+=`<text x="48" y="${t+SS*4+2}" font-size="13" fill="#333" font-family="serif">4</text>`;
+    svg+=`<text x="48" y="${t+SS*2+2}" font-size="13" fill="#333" font-family="serif">${mBeats}</text>`;
+    svg+=`<text x="48" y="${t+SS*4+2}" font-size="13" fill="#333" font-family="serif">${mUnit}</text>`;
   });
   svg+=sLine(CLEF_W-3,RHtop,CLEF_W-3,LHbot,'#333',1.2);
   let x=CLEF_W;
@@ -144,6 +146,6 @@ function drumStaffSVG(measures){
   svg+=sLine(x,staffTop,x,staffBot,'#333',2);svg+='</svg>';return svg;
 }
 
-function melodyStaffSVG(measures,color='#1eb8a0'){
-  return singleStaffSVG(measures.map(m=>({...m,notes:m.melNotes||[]})),'treble',color);
+function melodyStaffSVG(measures,color='#1eb8a0',meter='4/4'){
+  return singleStaffSVG(measures.map(m=>({...m,notes:m.melNotes||[]})),'treble',color,meter);
 }
