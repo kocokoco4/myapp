@@ -144,11 +144,11 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   #sidebar.open{transform:translateX(0)}
   #sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:799}
   #sb-overlay.open{display:block}
-  #bnav{display:flex!important}
+  #bnav{display:flex!important;position:fixed!important;bottom:0;left:0;right:0;z-index:600;padding-bottom:env(safe-area-inset-bottom,0px)}
   .tab-c{padding:12px;padding-bottom:calc(var(--nav) + env(safe-area-inset-bottom,0px) + 16px)}
   .topbar{padding:9px 12px}
   .tabs-bar{display:none}
-  #main{height:100vh}
+  #main{height:100%;height:100dvh}
 }
 @media(min-width:769px){
   #bnav{display:none!important}

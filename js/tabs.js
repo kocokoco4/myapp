@@ -254,15 +254,31 @@ let npState={pitch:'C4',dur:'q'};
 function openNotePicker(e,si,mi){
   e.stopPropagation();
   const npk=document.getElementById('npk');
-  if(window.innerWidth<=768){
-    const bnavH=document.getElementById('bnav').offsetHeight||56;
-    npk.style.cssText=`display:block;position:fixed;left:0;right:0;bottom:${bnavH}px;top:auto;width:100%;border-radius:16px 16px 0 0;z-index:1000;max-height:75vh;overflow-y:auto;padding:16px`;
-  } else {
-    const btn=e.currentTarget;const rect=btn.getBoundingClientRect();
-    npk.style.cssText=`display:block;position:fixed;top:${rect.bottom+6}px;left:${Math.min(rect.left,window.innerWidth-320)}px;width:310px;border-radius:12px;z-index:500;padding:12px`;
-  }
   notePickerCb=(pitch,dur)=>addMelNote(si,mi,pitch,dur);
-  renderNotePicker();
+  if(window.innerWidth<=768){
+    // スマホ：画面下部ボトムシート
+    const bnavH=document.getElementById('bnav').offsetHeight||56;
+    npk.style.cssText=`display:block;position:fixed;left:0;right:0;bottom:${bnavH}px;top:auto;width:100%;border-radius:16px 16px 0 0;z-index:1000;max-height:72vh;overflow-y:auto;padding:16px`;
+    renderNotePicker();
+  } else {
+    // PC：ボタン付近に表示。画面外にはみ出る場合は反転
+    const btn=e.currentTarget;const rect=btn.getBoundingClientRect();
+    // 仮レンダリングで高さを計測
+    npk.style.cssText=`visibility:hidden;display:block;position:fixed;top:0;left:0;width:310px;border-radius:12px;z-index:500;padding:12px`;
+    renderNotePicker();
+    const ph=npk.offsetHeight;
+    const pw=310;
+    const margin=8;
+    const vw=window.innerWidth;const vh=window.innerHeight;
+    // 左右
+    let left=rect.left;
+    if(left+pw+margin>vw) left=vw-pw-margin;
+    if(left<margin) left=margin;
+    // 上下：下に収まるなら下、収まらなければ上
+    let top=rect.bottom+6;
+    if(top+ph+margin>vh) top=Math.max(margin,rect.top-ph-6);
+    npk.style.cssText=`display:block;position:fixed;top:${top}px;left:${left}px;width:${pw}px;border-radius:12px;z-index:500;padding:12px`;
+  }
 }
 
 /* ── 音価 SVG 記号 ── */
