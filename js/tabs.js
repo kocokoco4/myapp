@@ -532,14 +532,16 @@ ${!hasKey?`<div style="background:rgba(232,160,32,.08);border:1px solid rgba(232
 
 /* ── DICT（コード進行辞典） ── */
 let _dictFilter='全て';
+let _dictMainTab='chords'; // 'chords' | 'basics'
 let _dictPreviewTimers=[];
 
-const _DICT_GENRES=['全て','J-POP','ポップス','ロック','ジャズ','ブルース','クラシック','ソウル/R&B','映画音楽','📚 音楽基礎'];
+const _CHORD_GENRES=['全て','J-POP','ポップス','ロック','ジャズ','ブルース','クラシック','ソウル/R&B','映画音楽'];
 const _MOOD_COLOR={'明るい':'#50c878','哀愁':'#3b82f6','切ない':'#9060e8','感動':'#e8a020',
   'ダーク':'#e05050','おしゃれ':'#1eb8a0','渋い':'#8a8070','壮大':'#7c3aed',
   '懐かしい':'#f0b840','グルーヴ':'#e05050','洗練':'#1eb8a0','叙情的':'#9060e8',
   '普遍的':'#50c878','力強い':'#e8a020','神秘':'#7c3aed','スウィング':'#f0b840','史詩的':'#7c3aed'};
 
+function setDictMainTab(t){_dictMainTab=t;renderTab();}
 function setDictFilter(g){_dictFilter=g;renderTab();}
 
 function dictPreview(idx){
@@ -585,20 +587,171 @@ function applyDictToSection(si,dictIdx){
   switchTab('chords');
 }
 
+/* 音楽基礎 — 各カードの視覚要素 */
+function _basicsVisual(idx){
+  const C='#e8a020',P='#9060e8',T='#1eb8a0',B='#3b82f6',R='#e05050',G='#50c878';
+  const stLines=(x1,x2)=>[8,16,24,32,40].map(y=>`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#555" stroke-width="0.7"/>`).join('');
+  const v=[
+    /* 0: 五線譜 */
+    `<svg width="100%" height="54" viewBox="0 0 240 54" style="max-width:240px">
+      ${[6,14,22,30,38].map((y,i)=>`<line x1="28" y1="${y}" x2="200" y2="${y}" stroke="#666" stroke-width="0.8"/>
+        <text x="2" y="${y+4}" font-size="8" fill="#777" font-family="monospace">第${5-i}線</text>`).join('')}
+      <ellipse cx="120" cy="22" rx="7" ry="4.5" fill="${T}" transform="rotate(-12,120,22)"/>
+      <line x1="127" y1="21" x2="127" y2="2" stroke="${T}" stroke-width="1.3"/>
+      <line x1="88" y1="46" x2="88" y2="54" stroke="${C}" stroke-width="0.8"/>
+      <line x1="80" y1="46" x2="96" y2="46" stroke="${C}" stroke-width="0.8"/>
+      <text x="84" y="54" font-size="8" fill="${C}" font-family="monospace">加線</text>
+      <ellipse cx="88" cy="46" rx="6" ry="4" fill="${C}" transform="rotate(-12,88,46)"/>
+    </svg>`,
+    /* 1: ト音記号/ヘ音記号 */
+    `<div style="display:flex;gap:24px;align-items:center">
+      <div style="text-align:center"><div style="font-size:52px;line-height:1;font-family:serif;color:${C}">𝄞</div><div style="font-size:10px;color:#999;margin-top:2px">ト音記号</div><div style="font-size:9px;color:#666">（高音部）</div></div>
+      <div style="font-size:20px;color:#444">vs</div>
+      <div style="text-align:center"><div style="font-size:38px;line-height:1.2;font-family:serif;color:${P};margin-top:4px">𝄢</div><div style="font-size:10px;color:#999;margin-top:4px">ヘ音記号</div><div style="font-size:9px;color:#666">（低音部）</div></div>
+    </div>`,
+    /* 2: 音符の長さ */
+    `<div style="overflow-x:auto"><svg width="230" height="56" viewBox="0 0 230 56">
+      ${[[18,'w'],[56,'h'],[94,'q'],[132,'8'],[170,'16']].map(([cx,dur],i)=>{
+        const labels=['全音符','2分','4分','8分','16分'];
+        const sx=cx+6,sy1=30,sy2=10;
+        let s='';
+        if(dur==='w') s+=`<ellipse cx="${cx}" cy="30" rx="8" ry="5.5" fill="none" stroke="${C}" stroke-width="1.6" transform="rotate(-12,${cx},30)"/>`;
+        else if(dur==='h') s+=`<ellipse cx="${cx}" cy="30" rx="7" ry="4.5" fill="none" stroke="${C}" stroke-width="1.5" transform="rotate(-12,${cx},30)"/>`;
+        else s+=`<ellipse cx="${cx}" cy="30" rx="7" ry="4.5" fill="${C}" transform="rotate(-12,${cx},30)"/>`;
+        if(dur!=='w') s+=`<line x1="${sx}" y1="${sy1-1}" x2="${sx}" y2="${sy2}" stroke="${C}" stroke-width="1.2"/>`;
+        if(dur==='8') s+=`<path d="M ${sx} ${sy2} q 8 4 4 12" stroke="${C}" fill="none" stroke-width="1.2"/>`;
+        if(dur==='16') s+=`<path d="M ${sx} ${sy2} q 8 4 4 11" stroke="${C}" fill="none" stroke-width="1.2"/><path d="M ${sx} ${sy2+5} q 8 4 4 11" stroke="${C}" fill="none" stroke-width="1.2"/>`;
+        s+=`<text x="${cx}" y="52" font-size="8" fill="#999" font-family="monospace" text-anchor="middle">${labels[i]}</text>`;
+        return s;
+      }).join('')}
+    </svg></div>`,
+    /* 3: 付点音符 */
+    `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <svg width="80" height="46" viewBox="0 0 80 46">
+        <ellipse cx="22" cy="26" rx="7" ry="4.5" fill="${P}" transform="rotate(-12,22,26)"/>
+        <line x1="29" y1="25" x2="29" y2="6" stroke="${P}" stroke-width="1.2"/>
+        <circle cx="37" cy="24" r="3.5" fill="${C}"/>
+        <text x="9" y="44" font-size="9" fill="${P}" font-family="monospace">付点4分</text>
+      </svg>
+      <span style="font-size:18px;color:#666">=</span>
+      <div style="text-align:center"><div style="font-size:26px;font-weight:800;color:${C};font-family:monospace;line-height:1">1.5</div><div style="font-size:10px;color:#999">拍</div></div>
+      <div style="font-size:10px;color:#777;line-height:1.6">1拍 + 0.5拍<br>（元の長さ × 1.5）</div>
+    </div>`,
+    /* 4: 三連符 */
+    `<div style="overflow-x:auto"><svg width="180" height="56" viewBox="0 0 180 56">
+      ${[28,90,152].map(cx=>`<ellipse cx="${cx}" cy="36" rx="7" ry="4.5" fill="${B}" transform="rotate(-12,${cx},36)"/>
+        <line x1="${cx+7}" y1="35" x2="${cx+7}" y2="14" stroke="${B}" stroke-width="1.2"/>`).join('')}
+      <path d="M 24 12 Q 90 -2 158 12" stroke="${C}" fill="none" stroke-width="1.4"/>
+      <text x="90" y="8" font-size="14" fill="${C}" font-family="monospace" text-anchor="middle" font-weight="bold">3</text>
+      <text x="90" y="54" font-size="9" fill="#999" font-family="monospace" text-anchor="middle">3つで本来の2拍分</text>
+    </svg></div>`,
+    /* 5: 拍子記号 */
+    `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+      ${[['4','4',C,'四拍子'],['3','4',P,'三拍子'],['6','8',T,'六拍子（複合）']].map(([a,b,col,lbl])=>`
+        <div style="text-align:center">
+          <svg width="36" height="46" viewBox="0 0 36 46">${stLines(2,34)}
+            <text x="11" y="22" font-size="18" fill="${col}" font-family="serif" font-weight="bold">${a}</text>
+            <text x="11" y="40" font-size="18" fill="${col}" font-family="serif" font-weight="bold">${b}</text>
+          </svg>
+          <div style="font-size:9px;color:#888;margin-top:1px">${lbl}</div>
+        </div>`).join('')}
+    </div>`,
+    /* 6: テンポとBPM */
+    `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:40px;color:${C};line-height:1">♩</span>
+      <span style="font-size:26px;color:#666">=</span>
+      <div style="text-align:center"><div style="font-size:34px;font-weight:800;color:${T};font-family:monospace;line-height:1">120</div><div style="font-size:9px;color:#888;font-family:monospace">BPM</div></div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-left:6px">
+        <div style="font-size:10px;color:#888;font-family:monospace">60   → ゆっくり 🐢</div>
+        <div style="font-size:10px;color:${C};font-family:monospace">120 → 普通 🚶</div>
+        <div style="font-size:10px;color:${R};font-family:monospace">160+ → 速い 🏃</div>
+      </div>
+    </div>`,
+    /* 7: コードとは */
+    `<div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+      ${[['C','ルート',C],['E','長3度',P],['G','完全5度',T]].map(([n,label,col],i)=>`
+        ${i>0?`<span style="font-size:20px;color:#555;align-self:center;padding-top:4px">+</span>`:''}
+        <div style="text-align:center">
+          <div style="width:40px;height:40px;border-radius:50%;background:${col}20;border:2px solid ${col};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:${col};font-family:monospace">${n}</div>
+          <div style="font-size:9px;color:#888;margin-top:3px;line-height:1.3">${label}</div>
+        </div>`).join('')}
+      <span style="font-size:22px;color:#666;align-self:center;padding:0 6px">→</span>
+      <div style="text-align:center">
+        <div style="font-size:22px;font-weight:800;color:${C};font-family:monospace;background:${C}18;border:2px solid ${C}55;border-radius:8px;padding:6px 14px">C</div>
+        <div style="font-size:9px;color:#888;margin-top:3px">コード（和音）</div>
+      </div>
+    </div>`,
+    /* 8: キー（調） */
+    `<div>
+      <div style="display:flex;gap:3px;margin-bottom:6px">
+        ${['C','D','E','F','G','A','B'].map(n=>`<div style="flex:1;text-align:center;background:rgba(255,255,255,.09);border:1px solid #444;border-radius:5px;padding:6px 0;font-size:12px;font-weight:800;color:${C};font-family:monospace">${n}</div>`).join('')}
+      </div>
+      <div style="font-size:9px;color:#888;font-family:monospace;text-align:center">Cメジャースケール（白鍵7音のみ）</div>
+    </div>`,
+    /* 9: ダイアトニックコード */
+    `<div style="overflow-x:auto">
+      <div style="display:flex;gap:3px;min-width:270px">
+        ${[['Ⅰ','C',G],['Ⅱm','Dm','#aaa'],['Ⅲm','Em','#aaa'],['Ⅳ','F',G],['Ⅴ','G',C],['Ⅵm','Am',P],['Ⅶ°','B°',R]].map(([r,c,col])=>`
+          <div style="flex:1;text-align:center">
+            <div style="font-size:9px;color:${col};font-family:monospace;margin-bottom:2px;font-weight:700">${r}</div>
+            <div style="font-size:10px;font-weight:700;color:#ddd;font-family:monospace;background:var(--bg4);border:1px solid ${col}55;border-radius:5px;padding:4px 1px">${c}</div>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:9px;color:#888;margin-top:6px;font-family:monospace">Cメジャーの7つのダイアトニックコード</div>
+    </div>`,
+    /* 10: 音程（インターバル） */
+    `<div style="overflow-x:auto"><svg width="220" height="54" viewBox="0 0 220 54">
+      ${[6,14,22,30,38].map(y=>`<line x1="8" y1="${y}" x2="200" y2="${y}" stroke="#444" stroke-width="0.6"/>`).join('')}
+      <ellipse cx="40" cy="30" rx="7" ry="4.5" fill="${T}" transform="rotate(-12,40,30)"/>
+      <line x1="47" y1="29" x2="47" y2="8" stroke="${T}" stroke-width="1.2"/>
+      <text x="34" y="52" font-size="9" fill="${T}" font-family="monospace">C</text>
+      <ellipse cx="110" cy="22" rx="7" ry="4.5" fill="${P}" transform="rotate(-12,110,22)"/>
+      <line x1="117" y1="21" x2="117" y2="0" stroke="${P}" stroke-width="1.2"/>
+      <text x="104" y="52" font-size="9" fill="${P}" font-family="monospace">E</text>
+      <ellipse cx="180" cy="14" rx="7" ry="4.5" fill="${C}" transform="rotate(-12,180,14)"/>
+      <line x1="187" y1="13" x2="187" y2="-8" stroke="${C}" stroke-width="1.2"/>
+      <text x="174" y="52" font-size="9" fill="${C}" font-family="monospace">G</text>
+      <line x1="47" y1="5" x2="117" y2="5" stroke="${P}" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="82" y="3" font-size="8" fill="${P}" font-family="monospace" text-anchor="middle">長3度</text>
+      <line x1="117" y1="9" x2="187" y2="9" stroke="${C}" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="152" y="7" font-size="8" fill="${C}" font-family="monospace" text-anchor="middle">短3度</text>
+    </svg></div>`,
+    /* 11: コードの種類 */
+    `<div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${[[`C`,`メジャー`,G],[`Cm`,`マイナー`,P],[`C7`,`セブンス`,C],[`CM7`,`メジャー7`,T],[`Cdim`,`ディミニッシュ`,R]].map(([c,l,col])=>`
+        <div style="text-align:center">
+          <div style="font-size:13px;font-weight:800;color:${col};font-family:monospace;background:${col}18;border:1.5px solid ${col}55;border-radius:6px;padding:5px 8px">${c}</div>
+          <div style="font-size:8px;color:#888;margin-top:3px">${l}</div>
+        </div>`).join('')}
+    </div>`,
+    /* 12: スケール */
+    `<div>
+      <div style="display:flex;gap:3px;align-items:flex-end;margin-bottom:4px">
+        ${[['C',32,C],['D',18,'#ccc'],['E',18,'#ccc'],['F',18,'#ccc'],['G',22,'#ccc'],['A',18,'#ccc'],['B',18,'#ccc'],['C',32,C]].map(([n,h,col])=>`
+          <div style="flex:1;text-align:center">
+            <div style="height:${h}px;background:${col}44;border:1px solid ${col};border-radius:3px 3px 0 0;margin-bottom:3px"></div>
+            <div style="font-size:10px;font-weight:700;color:${col};font-family:monospace">${n}</div>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:9px;color:#888;font-family:monospace;text-align:center">全全半全全全半（メジャースケールのパターン）</div>
+    </div>`,
+  ];
+  return v[idx]||'';
+}
+
 function _renderMusicBasics(){
-  return`
-<div style="display:flex;flex-direction:column;gap:10px">
+  return`<div style="display:flex;flex-direction:column;gap:12px">
 ${MUSIC_BASICS.map((item,idx)=>`
-<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:14px">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-    <span style="font-size:22px;line-height:1">${item.icon}</span>
-    <div>
-      <div style="font-weight:700;font-size:13px">${esc(item.title)}</div>
-      <span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(30,184,160,.12);color:var(--teal);font-family:var(--mono);font-weight:700">音楽基礎</span>
-    </div>
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-weight:800;font-size:15px;color:var(--text)">${esc(item.title)}</div>
+    <span style="font-size:9px;padding:3px 8px;border-radius:10px;background:rgba(30,184,160,.15);color:var(--teal);font-family:var(--mono);font-weight:700;flex-shrink:0;margin-left:8px">音楽基礎</span>
   </div>
-  <div style="font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:8px">${esc(item.body)}</div>
-  <div style="background:rgba(30,184,160,.07);border-left:3px solid var(--teal);border-radius:0 6px 6px 0;padding:7px 10px;font-size:10px;color:var(--teal);line-height:1.7">
+  <div style="background:var(--bg4);border-radius:8px;padding:12px 14px;margin-bottom:12px;min-height:50px;display:flex;align-items:center">
+    ${_basicsVisual(idx)}
+  </div>
+  <div style="font-size:12px;color:var(--text2);line-height:1.9;margin-bottom:10px">${esc(item.body)}</div>
+  <div style="background:rgba(30,184,160,.08);border-left:3px solid var(--teal);border-radius:0 6px 6px 0;padding:8px 11px;font-size:11px;color:var(--teal);line-height:1.7">
     💡 ${esc(item.tip)}
   </div>
 </div>`).join('')}
@@ -607,59 +760,52 @@ ${MUSIC_BASICS.map((item,idx)=>`
 
 function renderDict(){
   const s=cur();
-  const isBasics=_dictFilter==='📚 音楽基礎';
-  const filtered=isBasics?[]:(_dictFilter==='全て'?CHORD_DICT:CHORD_DICT.filter(e=>e.genre.includes(_dictFilter)));
+  const filtered=_dictMainTab==='chords'?(_dictFilter==='全て'?CHORD_DICT:CHORD_DICT.filter(e=>e.genre.includes(_dictFilter))):[];
   return`
-<div style="margin-bottom:14px">
-  <div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:4px">📖 辞典</div>
-  <div style="font-size:11px;color:var(--text3);line-height:1.7">${isBasics?'音楽の基礎知識を学ぼう。理論がわかると作曲の幅が広がります。':'世界の名曲・定番進行を学んで自分の曲に活用しよう。▶ で試聴、「使う」でコード進行タブに即反映。'}</div>
+<div style="font-family:var(--disp);font-size:16px;font-weight:800;margin-bottom:14px">📖 辞典</div>
+
+<!-- メインタブ（2択） -->
+<div style="display:flex;gap:8px;margin-bottom:16px">
+  <button onclick="setDictMainTab('chords')" style="flex:1;padding:11px 8px;border-radius:10px;border:2px solid ${_dictMainTab==='chords'?'var(--amber)':'var(--border)'};background:${_dictMainTab==='chords'?'rgba(232,160,32,.12)':'transparent'};color:${_dictMainTab==='chords'?'var(--amber)':'var(--text3)'};font-weight:700;font-size:13px;cursor:pointer;transition:.15s">🎵 コード進行</button>
+  <button onclick="setDictMainTab('basics')" style="flex:1;padding:11px 8px;border-radius:10px;border:2px solid ${_dictMainTab==='basics'?'var(--teal)':'var(--border)'};background:${_dictMainTab==='basics'?'rgba(30,184,160,.12)':'transparent'};color:${_dictMainTab==='basics'?'var(--teal)':'var(--text3)'};font-weight:700;font-size:13px;cursor:pointer;transition:.15s">📚 音楽基礎</button>
 </div>
 
-<!-- カテゴリ/ジャンルフィルター -->
-<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px">
-  ${_DICT_GENRES.map(g=>{
-    const isBasicsBtn=g==='📚 音楽基礎';
-    const isSel=_dictFilter===g;
-    const selColor=isBasicsBtn?'var(--teal)':'var(--amber)';
-    const selBg=isBasicsBtn?'rgba(30,184,160,.15)':'rgba(232,160,32,.15)';
-    return`<button class="btn" style="font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid ${isSel?selColor:'var(--border2)'};background:${isSel?selBg:'transparent'};color:${isSel?selColor:'var(--text3)'}" onclick="setDictFilter('${g}')">${g}</button>`;
-  }).join('')}
+${_dictMainTab==='basics'?_renderMusicBasics():`
+<!-- ジャンルサブフィルター -->
+<div style="font-size:11px;color:var(--text3);line-height:1.7;margin-bottom:10px">▶ で試聴、「使う」でコード進行タブに即反映。</div>
+<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px">
+  ${_CHORD_GENRES.map(g=>`<button onclick="setDictFilter('${g}')" style="font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid ${_dictFilter===g?'var(--amber)':'var(--border2)'};background:${_dictFilter===g?'rgba(232,160,32,.15)':'transparent'};color:${_dictFilter===g?'var(--amber)':'var(--text3)'};cursor:pointer">${g}</button>`).join('')}
 </div>
 
-${isBasics?_renderMusicBasics():`
 <!-- コード進行カード一覧 -->
-<div style="display:flex;flex-direction:column;gap:10px">
-${filtered.map((entry,idx)=>{
+<div style="display:flex;flex-direction:column;gap:12px">
+${filtered.map((entry)=>{
   const realIdx=CHORD_DICT.indexOf(entry);
   const moodColor=_MOOD_COLOR[entry.mood.split('・')[0]]||'var(--text2)';
   return`
-<div id="dcard_${realIdx}" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:14px;transition:border-color .15s">
-  <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+<div id="dcard_${realIdx}" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:16px">
+  <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">
     <div style="flex:1">
-      <div style="font-weight:700;font-size:13px;margin-bottom:3px">${esc(entry.name)}</div>
+      <div style="font-weight:800;font-size:15px;margin-bottom:6px;color:var(--text)">${esc(entry.name)}</div>
       <div style="display:flex;gap:5px;flex-wrap:wrap">
-        <span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(232,160,32,.12);color:var(--amber);font-family:var(--mono);font-weight:700">${esc(entry.genre)}</span>
-        <span style="font-size:9px;padding:2px 7px;border-radius:10px;background:${moodColor}18;color:${moodColor};font-family:var(--mono)">${esc(entry.mood)}</span>
+        <span style="font-size:10px;padding:3px 9px;border-radius:10px;background:rgba(232,160,32,.12);color:var(--amber);font-family:var(--mono);font-weight:700">${esc(entry.genre)}</span>
+        <span style="font-size:10px;padding:3px 9px;border-radius:10px;background:${moodColor}18;color:${moodColor};font-family:var(--mono)">${esc(entry.mood)}</span>
       </div>
     </div>
     <div style="display:flex;gap:5px;flex-shrink:0">
-      <button class="btn btn-g" style="font-size:10px;padding:4px 9px" onclick="dictPreview(${realIdx})">▶ 試聴</button>
-      ${s?`<button class="btn btn-a" style="font-size:10px;padding:4px 9px" onclick="openDictApply(${realIdx})">使う ▾</button>`:''}
+      <button class="btn btn-g" style="font-size:10px;padding:5px 10px" onclick="dictPreview(${realIdx})">▶ 試聴</button>
+      ${s?`<button class="btn btn-a" style="font-size:10px;padding:5px 10px" onclick="openDictApply(${realIdx})">使う ▾</button>`:''}
     </div>
   </div>
-  <!-- コードピル -->
-  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
-    ${entry.chords.map((c,i)=>`<span style="background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--text)">${i+1}.<span style="color:var(--amber);margin-left:3px">${c}</span></span>`).join('')}
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">
+    ${entry.chords.map((c,i)=>`<span style="background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;font-family:var(--mono);color:var(--text)">${i+1}.<span style="color:var(--amber);margin-left:3px">${c}</span></span>`).join('')}
   </div>
-  <!-- 説明 -->
-  <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:6px">${esc(entry.desc)}</div>
-  <!-- 有名曲 -->
-  <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">🎵 ${entry.ex.map(e=>esc(e)).join(' · ')}</div>
-  <!-- セクション適用パネル -->
+  <div style="font-size:12px;color:var(--text2);line-height:1.9;margin-bottom:8px">${esc(entry.desc)}</div>
+  <div style="font-size:11px;color:var(--text3);font-family:var(--mono);line-height:1.7">🎵 ${entry.ex.map(e=>esc(e)).join(' · ')}</div>
   ${s?`<div id="dapply_${realIdx}" class="dapply-panel" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">
-    <div style="font-size:10px;color:var(--text2);margin-bottom:6px;font-weight:700">どのセクションに適用する？</div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap">
-      ${s.sections.map((sec,si)=>`<button class="btn btn-g" style="font-size:10px;padding:4px 10px;border-color:var(--teal);color:var(--teal)" onclick="applyDictToSection(${si},${realIdx})">${esc(sec.name)}</button>`).join('')}
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:700">どのセクションに適用する？</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${s.sections.map((sec,si)=>`<button class="btn btn-g" style="font-size:11px;padding:5px 12px;border-color:var(--teal);color:var(--teal)" onclick="applyDictToSection(${si},${realIdx})">${esc(sec.name)}</button>`).join('')}
     </div>
   </div>`:''}
 </div>`;
