@@ -14,6 +14,9 @@ if(window.innerWidth>768){document.getElementById('sidebar').style.display=sbVis
 renderAll();
 renderSyncBar();
 
+// 音符ピッカー内クリックは document まで伝播させない（innerHTML 更新後も #npk 自体は同一要素）
+document.getElementById('npk').addEventListener('click',e=>e.stopPropagation());
+
 // クリックでドロップダウン・ピッカーを閉じる
 document.addEventListener('click',e=>{
   if(!e.target.closest('.status-wr'))document.getElementById('stDrop').classList.remove('open');

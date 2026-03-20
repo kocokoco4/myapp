@@ -253,13 +253,41 @@ let npState={pitch:'C4',dur:'q'};
 
 function openNotePicker(e,si,mi){
   e.stopPropagation();
-  const btn=e.currentTarget;const rect=btn.getBoundingClientRect();
   const npk=document.getElementById('npk');
-  npk.style.display='block';
-  const top=rect.bottom+6;const left=Math.min(rect.left,window.innerWidth-310);
-  npk.style.top=top+'px';npk.style.left=left+'px';
+  if(window.innerWidth<=768){
+    const bnavH=document.getElementById('bnav').offsetHeight||56;
+    npk.style.cssText=`display:block;position:fixed;left:0;right:0;bottom:${bnavH}px;top:auto;width:100%;border-radius:16px 16px 0 0;z-index:1000;max-height:75vh;overflow-y:auto;padding:16px`;
+  } else {
+    const btn=e.currentTarget;const rect=btn.getBoundingClientRect();
+    npk.style.cssText=`display:block;position:fixed;top:${rect.bottom+6}px;left:${Math.min(rect.left,window.innerWidth-320)}px;width:310px;border-radius:12px;z-index:500;padding:12px`;
+  }
   notePickerCb=(pitch,dur)=>addMelNote(si,mi,pitch,dur);
   renderNotePicker();
+}
+
+/* ── 音価 SVG 記号 ── */
+function _noteSvg(v){
+  const W=20,H=22,cx=6,cy=18,sx=cx+5;
+  const isOpen=v==='w'||v==='h'||v==='h.';
+  const flagMap={'8':1,'8.':1,'8t':1,'16':2,'16t':2,'32':3};
+  const nF=flagMap[v]||0;
+  const isDot=v.includes('.');
+  const isTri=v.endsWith('t');
+  const hasStem=v!=='w';
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:inline-block;vertical-align:middle;pointer-events:none">`;
+  if(v==='w'){
+    s+=`<ellipse cx="${cx}" cy="${cy}" rx="5.5" ry="3.5" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(-12,${cx},${cy})"/>`;
+  }else if(isOpen){
+    s+=`<ellipse cx="${cx}" cy="${cy}" rx="5" ry="3.2" fill="none" stroke="currentColor" stroke-width="1.3" transform="rotate(-12,${cx},${cy})"/>`;
+  }else{
+    s+=`<ellipse cx="${cx}" cy="${cy}" rx="5" ry="3.2" fill="currentColor" transform="rotate(-12,${cx},${cy})"/>`;
+  }
+  if(hasStem) s+=`<line x1="${sx}" y1="${cy-2}" x2="${sx}" y2="3" stroke="currentColor" stroke-width="1.2"/>`;
+  for(let i=0;i<nF;i++) s+=`<path d="M ${sx} ${3+i*5} q 8 2 6 8" stroke="currentColor" fill="none" stroke-width="1.1"/>`;
+  if(isDot) s+=`<circle cx="${(hasStem?sx:cx)+6}" cy="${cy-2}" r="1.5" fill="currentColor"/>`;
+  if(isTri) s+=`<text x="${W-1}" y="10" font-size="7" fill="currentColor" font-family="monospace" font-weight="bold" text-anchor="end">3</text>`;
+  s+=`</svg>`;
+  return s;
 }
 
 /* ── ピアノ鍵盤SVG生成 ── */
@@ -339,14 +367,14 @@ function renderNotePicker(){
     const items=DURS.filter(d=>d.cat===cat);
     return`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
       <span style="font-size:9px;color:var(--text3);font-family:var(--mono);width:38px;flex-shrink:0">${cat}</span>
-      <div style="display:flex;gap:3px;flex-wrap:wrap">${items.map(d=>`<button class="dur-btn${npState.dur===d.v?' sel':''}" onclick="npSetDur('${d.v}')">${d.l}</button>`).join('')}</div>
+      <div style="display:flex;gap:3px;flex-wrap:wrap">${items.map(d=>`<button class="dur-btn${npState.dur===d.v?' sel':''}" onclick="npSetDur('${d.v}')" title="${d.l}">${_noteSvg(d.v)}</button>`).join('')}</div>
     </div>`;
   }).join('')}
 </div>
 
 <!-- 確定バー -->
 <div style="margin-top:10px;display:flex;gap:6px;align-items:center">
-  <div style="flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--teal)">${npState.pitch} / ${DURS.find(d=>d.v===npState.dur)?.l}</div>
+  <div style="flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--teal);display:flex;align-items:center;gap:6px">${npState.pitch} ${_noteSvg(npState.dur)}<span style="font-size:10px;opacity:.7">${DURS.find(d=>d.v===npState.dur)?.l||npState.dur}</span></div>
   <button class="btn" style="background:var(--teal);color:var(--bg);padding:7px 14px" onclick="npPreview()">▶</button>
   <button class="btn btn-a" style="padding:7px 14px" onclick="npConfirm()">追加</button>
 </div>`;
