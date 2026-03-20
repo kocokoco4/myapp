@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>曲帳</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#0b0a08;--bg2:#131210;--bg3:#1a1815;--bg4:#222018;
+  --border:#2c2820;--border2:#3a3628;
+  --text:#ede8dd;--text2:#8a8070;--text3:#4a4540;
+  --amber:#e8a020;--amber2:#f0b840;
+  --teal:#1eb8a0;--coral:#e05050;--green:#50c878;--purple:#9060e8;
+  --font:'Noto Sans JP',sans-serif;--mono:'Space Mono',monospace;--disp:'Syne',sans-serif;
+  --sb:230px;--nav:62px;--r:10px;--rl:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+#app{display:flex;height:100vh}
+#sidebar{width:var(--sb);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2);flex-shrink:0}
+.title-in{background:none;border:none;color:var(--text);font-family:var(--disp);font-size:16px;font-weight:700;flex:1;outline:none;min-width:0}
+.tabs-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;overflow-x:auto}
+.tabs-bar::-webkit-scrollbar{height:0}
+.tbtn{padding:10px 13px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:11px;white-space:nowrap;flex-shrink:0;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;font-family:var(--font)}
+.tbtn.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
+.tab-c{flex:1;overflow-y:auto;padding:16px}
+#bnav{display:none;height:var(--nav);background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;grid-template-columns:repeat(5,1fr)}
+.bnb{background:none;border:none;color:var(--text3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;font-family:var(--font);transition:color .15s;padding:5px 2px}
+.bnb.active{color:var(--amber)}
+.bnb-ic{font-size:18px;line-height:1}
+.sb-hd{padding:18px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sb-logo{font-family:var(--disp);font-size:17px;font-weight:800;color:var(--amber)}
+.sb-logo small{color:var(--text2);font-weight:400;font-size:12px;display:block;margin-top:-2px}
+.sb-new{width:calc(100% - 20px);margin:10px;padding:9px;background:var(--amber);border:none;border-radius:var(--r);color:var(--bg);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font)}
+.sb-new:hover{background:var(--amber2)}
+.sb-list{flex:1;overflow-y:auto;padding:4px 8px}
+.si{padding:9px 10px;border-radius:var(--r);cursor:pointer;transition:background .1s;position:relative;margin-bottom:2px;border:1px solid transparent}
+.si:hover{background:var(--bg3)}
+.si.active{background:var(--bg4);border-color:var(--border2)}
+.si .sn{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2);margin-bottom:3px}
+.si.active .sn{color:var(--text)}
+.si .stag{font-size:9px;padding:1px 5px;border-radius:10px;font-weight:700;font-family:var(--mono);display:inline-block}
+.si .sdel{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;opacity:0;padding:3px}
+.si:hover .sdel{opacity:1}
+.status-wr{position:relative;flex-shrink:0}
+.spill{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid;font-family:var(--mono);white-space:nowrap}
+.sdrop{position:absolute;right:0;top:calc(100%+5px);background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);z-index:300;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.6);min-width:95px;display:none}
+.sdrop.open{display:block}
+.sopt{padding:7px 14px;cursor:pointer;font-size:11px;font-weight:700;font-family:var(--mono)}
+.sopt:hover{background:var(--bg4)}
+.flbl{font-size:10px;color:var(--text2);font-weight:700;display:block;margin-bottom:5px;font-family:var(--mono);letter-spacing:.5px}
+.inp{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:7px 10px;font-size:13px;outline:none;font-family:var(--font)}
+.inp:focus{border-color:var(--amber)}
+/* ★ テキストエリアはDOM再描画なしで動作 */
+.txa{background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:12px;font-size:16px;line-height:2;resize:none;outline:none;width:100%;font-family:var(--font)}
+.txa:focus{border-color:var(--amber)}
+.btn{padding:8px 15px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-a{background:var(--amber);color:var(--bg)}
+.btn-a:hover:not(:disabled){background:var(--amber2)}
+.btn-g{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-g:hover:not(:disabled){border-color:var(--amber);color:var(--amber)}
+.btn-t{background:var(--teal);color:var(--bg)}
+.sec-wr{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:12px;margin-bottom:12px}
+.sni{background:none;border:none;color:var(--amber);font-weight:700;font-size:13px;outline:none;font-family:var(--disp);flex:1}
+.cg{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.cc{width:62px;height:50px;border-radius:9px;border:1px solid var(--border2);background:var(--bg4);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;user-select:none;-webkit-user-select:none}
+.cc:active{transform:scale(.95)}
+.cc.has{border-color:var(--amber);background:rgba(232,160,32,.08)}
+.cc.play{border-color:var(--teal)!important;background:rgba(30,184,160,.15)!important}
+.cc .bn{font-size:8px;color:var(--text3);position:absolute;top:3px;left:5px;font-family:var(--mono)}
+.cc .cn{font-size:12px;font-weight:700;color:var(--text3);font-family:var(--mono)}
+.cc.has .cn{color:var(--amber)}
+.cpk{position:absolute;top:calc(100%+5px);left:0;z-index:400;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:10px;width:250px;box-shadow:0 16px 48px rgba(0,0,0,.7)}
+.cpr{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:3px}
+.cpb{padding:3px 6px;border-radius:5px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:10px;cursor:pointer;font-family:var(--mono)}
+.cpb:hover,.cpb.a{background:rgba(232,160,32,.15);border-color:var(--amber);color:var(--amber)}
+.qr{display:flex;gap:4px;flex-wrap:wrap}
+.qb{font-size:10px;padding:3px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:20px;color:var(--text2);cursor:pointer;font-family:var(--font)}
+.qb:hover{border-color:var(--teal);color:var(--teal)}
+.isel{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ibtn{padding:5px 13px;border-radius:20px;border:1px solid;background:transparent;font-size:11px;cursor:pointer;font-family:var(--mono);font-weight:700}
+/* Staff */
+.staff-block{background:#fff;border-radius:var(--rl);padding:14px;overflow-x:auto;margin-bottom:14px}
+.staff-sec-lbl{font-size:10px;font-weight:700;color:#7c3aed;font-family:monospace;letter-spacing:.5px;margin-bottom:7px;padding:2px 8px;background:#f3eeff;border-radius:4px;display:inline-block}
+.staff-part-lbl{font-size:11px;font-weight:700;font-family:monospace;margin-bottom:6px;margin-top:14px}
+.staff-part-lbl:first-child{margin-top:0}
+/* Melody input */
+.mel-sec{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:14px;margin-bottom:14px}
+.mel-sec-name{background:none;border:none;color:var(--amber);font-weight:700;font-size:13px;outline:none;font-family:var(--disp);margin-bottom:10px;display:block;width:100%}
+.mel-measures{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.mel-meas{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:8px;min-width:90px}
+.mel-meas-chord{font-size:10px;font-weight:700;color:var(--amber);font-family:var(--mono);margin-bottom:6px}
+.mel-notes{display:flex;gap:4px;flex-wrap:wrap}
+.mel-note-chip{padding:3px 7px;border-radius:5px;background:rgba(30,184,160,.15);border:1px solid var(--teal);color:var(--teal);font-size:11px;font-family:var(--mono);cursor:pointer;display:flex;align-items:center;gap:4px}
+.mel-note-chip .del{color:rgba(30,184,160,.5);font-size:10px}
+.add-note-btn{padding:4px 9px;border-radius:5px;background:transparent;border:1px dashed var(--border2);color:var(--text3);font-size:11px;cursor:pointer;font-family:var(--mono)}
+.add-note-btn:hover{border-color:var(--teal);color:var(--teal)}
+/* Note picker popup */
+.npk{position:fixed;z-index:500;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px;box-shadow:0 16px 48px rgba(0,0,0,.8);width:280px}
+.npk-row{display:flex;gap:4px;align-items:center;margin-bottom:8px}
+.npk-lbl{font-size:10px;color:var(--text2);font-family:var(--mono);width:50px;flex-shrink:0}
+.npk-note{padding:4px 7px;border-radius:5px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--mono)}
+.npk-note:hover,.npk-note.sel{background:rgba(30,184,160,.15);border-color:var(--teal);color:var(--teal)}
+.npk-note.sharp{color:var(--text3);font-size:9px}
+.dur-row{display:flex;gap:4px;flex-wrap:wrap}
+.dur-btn{padding:4px 9px;border-radius:5px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:10px;cursor:pointer;font-family:var(--mono)}
+.dur-btn:hover,.dur-btn.sel{background:rgba(232,160,32,.15);border-color:var(--amber);color:var(--amber)}
+/* Score / Chat */
+.sc-wr{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:20px}
+.sc-ti{font-family:var(--disp);font-size:22px;font-weight:800;color:var(--text);margin-bottom:3px}
+.sc-meta{font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:18px}
+.sc-sn{font-size:11px;font-weight:700;color:var(--amber);font-family:var(--mono);margin-bottom:7px;display:flex;align-items:center;gap:8px}
+.sc-sn::after{content:'';flex:1;height:1px;background:var(--border)}
+.sc-ch{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:7px 11px;font-size:15px;font-weight:700;font-family:var(--mono);color:var(--text3);min-width:52px;text-align:center}
+.sc-ch.has{border-color:rgba(232,160,32,.4);color:var(--amber)}
+.chat-wr{display:flex;flex-direction:column;height:100%}
+.chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-bottom:10px}
+.mb{max-width:84%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.7}
+.mb-u{align-self:flex-end;background:var(--amber);color:var(--bg);border-bottom-right-radius:3px;font-weight:500}
+.mb-a{align-self:flex-start;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-bottom-left-radius:3px}
+.chat-iw{flex-shrink:0;padding-top:10px;border-top:1px solid var(--border)}
+.sugg{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.sg{font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;color:var(--text2);cursor:pointer;white-space:nowrap}
+.sg:hover{border-color:var(--amber);color:var(--amber)}
+.chat-row{display:flex;gap:8px}
+.chat-in{flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:24px;color:var(--text);padding:10px 16px;font-size:16px;outline:none;font-family:var(--font)}
+.chat-in:focus{border-color:var(--amber)}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--bg3);border:1px solid var(--amber);border-radius:10px;padding:10px 18px;font-size:12px;color:var(--amber);z-index:9998;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;font-family:var(--mono)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(min-width:769px){#toast{bottom:22px}}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fi{animation:fi .2s ease}
+@media(max-width:768px){
+  #sidebar{
+    position:fixed;top:0;left:0;height:100vh;z-index:800;
+    transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+    box-shadow:4px 0 24px rgba(0,0,0,.6);
+  }
+  #sidebar.open{transform:translateX(0)}
+  #sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:799}
+  #sb-overlay.open{display:block}
+  #bnav{display:grid!important}
+  .tab-c{padding:12px;padding-bottom:calc(var(--nav)+16px)}
+  .topbar{padding:9px 12px}
+  .tabs-bar{display:none}
+  #main{height:100vh}
+}
+@media(min-width:769px){
+  #bnav{display:none!important}
+  #sb-overlay{display:none!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sb-hd">
+      <div class="sb-logo">曲帳<small>songbook</small></div>
+      <button class="btn btn-g" style="margin-left:auto;padding:3px 7px;font-size:11px" onclick="toggleSB()">✕</button>
+    </div>
+    <button class="sb-new" onclick="addSong()">＋ 新しい曲</button>
+    <div class="sb-list" id="songList"></div>
+    <div id="syncBar"></div>
+  </div>
+  <div id="main">
+    <div class="topbar" id="topbar">
+      <button class="btn btn-g" style="padding:5px 7px;font-size:15px;flex-shrink:0" onclick="toggleSB()">
+        <svg width="16" height="13" viewBox="0 0 16 13" fill="currentColor"><rect y="0" width="16" height="1.8" rx="1"/><rect y="5.6" width="12" height="1.8" rx="1"/><rect y="11.2" width="16" height="1.8" rx="1"/></svg>
+      </button>
+      <input class="title-in" id="titleIn" placeholder="曲タイトル" oninput="onTitleChange(this.value)">
+      <div class="status-wr"><button class="spill" id="stBtn" onclick="toggleSDrop()"></button><div class="sdrop" id="stDrop"></div></div>
+    </div>
+    <div class="tabs-bar" id="tabsBar"></div>
+    <div class="tab-c" id="tabC"></div>
+    <div id="bnav">
+      <button class="bnb" data-tab="lyrics" onclick="switchTab('lyrics')"><span class="bnb-ic">✏️</span>歌詞</button>
+      <button class="bnb" data-tab="melody" onclick="switchTab('melody')"><span class="bnb-ic">🎵</span>メロ</button>
+      <button class="bnb" data-tab="chords" onclick="switchTab('chords')"><span class="bnb-ic">🎸</span>コード</button>
+      <button class="bnb" data-tab="accomp" onclick="switchTab('accomp')"><span class="bnb-ic">🎼</span>伴奏</button>
+      <button class="bnb" data-tab="ai" onclick="switchTab('ai')"><span class="bnb-ic">✦</span>AI</button>
+    </div>
+    <div class="empty" id="emptyS" style="display:none">
+      <div style="font-size:44px;opacity:.3">🎵</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text2)">まだ曲がありません</div>
+      <button class="btn btn-a" onclick="addSong()">最初の曲を作る</button>
+    </div>
+  </div>
+</div>
+<div id="sb-overlay" onclick="closeSB()"></div>
+<div id="toast"></div>
+<!-- Note picker popup (shared) -->
+<div id="npk" class="npk" style="display:none"></div>
+<!-- Settings modal -->
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:20px;width:min(460px,100%);max-height:90vh;overflow-y:auto" id="settingsContent"></div>
+</div>
+
+<script>
+/* ─── CONSTANTS ─── */
+const KEYS=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const STATS=['アイデア','作詞中','作曲中','録音中','完成'];
+const STC={アイデア:'#64748b',作詞中:'#3b82f6',作曲中:'#9060e8',録音中:'#e8a020',完成:'#50c878'};
+const DSECS=['イントロ','Aメロ','Bメロ','サビ','アウトロ'];
+const CL=[['C','CM7','C7','Cm','Cm7','Cadd9'],['D','DM7','D7','Dm','Dm7','D/F#'],['E','EM7','E7','Em','Em7'],['F','FM7','F7','Fm','Fm7','F/A'],['G','GM7','G7','Gm','Gm7','G/B'],['A','AM7','A7','Am','Am7','A/C#'],['B','BM7','B7','Bm','Bm7'],['F#','F#m','Bb','Eb','Ab','Db']];
+const QP=[{l:'王道進行',c:['C','G','Am','F']},{l:'小室進行',c:['Am','F','G','C']},{l:'カノン',c:['C','G','Am','Em','F','C','F','G']},{l:'暗い系',c:['Am','G','F','E']},{l:'4-5-3-6',c:['F','G','Em','Am']}];
+const INSTRS={piano:{label:'ピアノ',color:'#9060e8'},bass:{label:'ベース',color:'#3b82f6'},guitar:{label:'ギター',color:'#e8a020'},drums:{label:'ドラム',color:'#e05050'}};
+const NOTE_NAMES_JP=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const OCTAVES=[3,4,5];
+const DURS=[{v:'w',l:'全音符',b:4},{v:'h',l:'2分',b:2},{v:'q',l:'4分',b:1},{v:'8',l:'8分',b:.5},{v:'16',l:'16分',b:.25}];
+const gid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ─── WEB AUDIO ─── */
+const NF={'C2':65.4,'C#2':69.3,'D2':73.4,'D#2':77.8,'E2':82.4,'F2':87.3,'F#2':92.5,'G2':98,'A2':110,'B2':123.5,'C3':130.8,'C#3':138.6,'D3':146.8,'D#3':155.6,'E3':164.8,'F3':174.6,'F#3':185,'G3':196,'A3':220,'B3':246.9,'C4':261.6,'C#4':277.2,'D4':293.7,'D#4':311.1,'E4':329.6,'F4':349.2,'F#4':370,'G4':392,'A4':440,'B4':493.9,'C5':523.3,'D5':587.3,'E5':659.3,'G5':784};
+const CI={'':[ 0,4,7],'M7':[0,4,7,11],'7':[0,4,7,10],'m':[0,3,7],'m7':[0,3,7,10],'add9':[0,4,7,14],'sus4':[0,5,7]};
+const NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+let actx=null;
+function parseChord(name){if(!name)return[];const sl=name.indexOf('/');const base=sl>0?name.slice(0,sl):name;const m=base.match(/^([A-G]#?)(.*)$/);if(!m)return[];const ri=NN.indexOf(m[1]);if(ri<0)return[];const ivs=CI[m[2]]||CI[''];return ivs.map(i=>{const ni=(ri+i)%12;const o=3+Math.floor((ri+i)/12);return NN[ni]+o;});}
+function playChord(name,el){
+  if(!name)return;if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();
+  const notes=parseChord(name);if(!notes.length)return;
+  if(el){el.classList.add('play');setTimeout(()=>el.classList.remove('play'),600);}
+  const now=actx.currentTime;
+  notes.forEach(n=>{const freq=NF[n];if(!freq)return;const osc=actx.createOscillator(),gain=actx.createGain(),filt=actx.createBiquadFilter();osc.type='triangle';osc.frequency.value=freq;filt.type='lowpass';filt.frequency.value=2200;gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(0.12,now+0.02);gain.gain.exponentialRampToValueAtTime(0.001,now+1.2);osc.connect(filt);filt.connect(gain);gain.connect(actx.destination);osc.start(now);osc.stop(now+1.2);});
+}
+function playNote(pitch){
+  if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();
+  const freq=NF[pitch];if(!freq)return;
+  const now=actx.currentTime;const osc=actx.createOscillator(),gain=actx.createGain();
+  osc.type='sine';osc.frequency.value=freq;gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(0.2,now+0.01);gain.gain.exponentialRampToValueAtTime(0.001,now+0.8);
+  osc.connect(gain);gain.connect(actx.destination);osc.start(now);osc.stop(now+0.8);
+}
+
+/* ─── STAFF RENDERER ─── */
+const SS=8,SH=4;
+const DI={C:0,D:1,E:2,F:3,G:4,A:5,B:6};
+function pitchPos(pitch,clef){const m=(pitch||'').match(/^([A-G])(#|b)?(\d)$/);if(!m)return 4;const o=parseInt(m[3]);if(clef==='bass')return(o-2)*7+(DI[m[1]]-DI['G']);return(o-4)*7+(DI[m[1]]-DI['E']);}
+function pY(pos,sb){return sb-pos*SH;}
+function sLine(x1,y1,x2,y2,c='#333',w=0.8){return`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}"/>`;}
+function staveLines(x,top,w){let s='';for(let i=0;i<=4;i++)s+=sLine(x,top+i*SS,x+w,top+i*SS);return s;}
+function ledger(cx,pos,sb){let s='';const lw=13;if(pos<=-1){const from=pos%2===0?pos:pos-1;for(let p=from;p<0;p+=2)s+=sLine(cx-lw/2,pY(p,sb),cx+lw/2,pY(p,sb),'#555',0.9);}if(pos>=9){for(let p=10;p<=pos+(pos%2===0?0:1);p+=2)s+=sLine(cx-lw/2,pY(p,sb),cx+lw/2,pY(p,sb),'#555',0.9);}return s;}
+function drawNoteHead(cx,pos,dur,color,sb){
+  const y=pY(pos,sb);const filled=dur!=='w'&&dur!=='h';let s=ledger(cx,pos,sb);
+  if(dur==='w')s+=`<ellipse cx="${cx}" cy="${y}" rx="5.5" ry="4" fill="none" stroke="${color}" stroke-width="1.6" transform="rotate(-10,${cx},${y})"/>`;
+  else if(!filled)s+=`<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="white" stroke="${color}" stroke-width="1.5" transform="rotate(-10,${cx},${y})"/>`;
+  else s+=`<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="${color}" transform="rotate(-10,${cx},${y})"/>`;
+  if(dur!=='w'){const up=pos<4;const sx=up?cx+5:cx-5;const sy1=y+(up?-1:1);const sy2=y+(up?-26:26);s+=sLine(sx,sy1,sx,sy2,color,1.2);
+    if(dur==='8')s+=up?`<path d="M ${sx} ${sy2} q 10 5 5 16" stroke="${color}" fill="none" stroke-width="1.2"/>`:`<path d="M ${sx} ${sy2} q 10 -5 5 -16" stroke="${color}" fill="none" stroke-width="1.2"/>`;
+    if(dur==='16')s+=up?`<path d="M ${sx} ${sy2} q 10 5 5 14" stroke="${color}" fill="none" stroke-width="1.2"/><path d="M ${sx} ${sy2+7} q 10 5 5 14" stroke="${color}" fill="none" stroke-width="1.2"/>`:`<path d="M ${sx} ${sy2} q 10 -5 5 -14" stroke="${color}" fill="none" stroke-width="1.2"/><path d="M ${sx} ${sy2-7} q 10 -5 5 -14" stroke="${color}" fill="none" stroke-width="1.2"/>`;
+  }
+  return s;
+}
+function drawAccidental(cx,pos,acc,color,sb){if(!acc)return'';const y=pY(pos,sb);return`<text x="${cx-13}" y="${y+4}" font-size="10" fill="${color}" text-anchor="middle" font-family="serif">${acc==='#'?'♯':'♭'}</text>`;}
+function drawRest(cx,dur,sb){const mid=pY(4,sb);if(dur==='w')return`<rect x="${cx-6}" y="${pY(6,sb)}" width="12" height="5" fill="#555" rx="1"/>`;if(dur==='h')return`<rect x="${cx-6}" y="${pY(4,sb)-5}" width="12" height="5" fill="#555" rx="1"/>`;if(dur==='q')return`<path d="M ${cx} ${mid-14} q 5 3 0 8 q -7 3 -2 9 q 5 3 2 9" stroke="#555" fill="none" stroke-width="1.5"/>`;return`<path d="M ${cx} ${mid-6} q 7 0 2 10" stroke="#555" fill="none" stroke-width="1.5"/><circle cx="${cx+2}" cy="${mid+4}" r="2.5" fill="#555"/>`;}
+function renderNotes(notes,clef,mx,mw,sb,color){let s='';if(!notes||!notes.length){s+=drawRest(mx+mw/2,'w',sb);return s;}const bw=mw/4;for(const n of notes){if(!n?.pitch)continue;const isR=n.pitch==='R';const cx=mx+(n.startBeat||0)*bw+bw*0.55;if(isR){s+=drawRest(cx,n.duration||'q',sb);continue;}const m=n.pitch.match(/^([A-G])(#|b)?(\d)$/);if(!m)continue;const pos=pitchPos(n.pitch,clef);s+=drawNoteHead(cx,pos,n.duration||'q',color,sb);s+=drawAccidental(cx,pos,m[2]||null,color,sb);}return s;}
+
+function singleStaffSVG(measures,clef,color){
+  const PT=22,PB=20,staffTop=PT,staffBot=staffTop+4*SS,svgH=staffBot+PB;
+  const CLEF_W=58,MW=152,w=CLEF_W+measures.length*MW+8;
+  let svg=`<svg width="${w}" height="${svgH}" style="display:block">`;
+  svg+=staveLines(2,staffTop,w-4);
+  if(clef==='bass')svg+=`<text x="6" y="${staffTop+SS*3+5}" font-size="36" fill="#333" font-family="serif">𝄢</text>`;
+  else svg+=`<text x="4" y="${staffTop+SS*5+8}" font-size="56" fill="#333" font-family="serif">𝄞</text>`;
+  svg+=`<text x="46" y="${staffTop+SS*2+2}" font-size="13" fill="#333" font-family="serif">4</text><text x="46" y="${staffTop+SS*4+2}" font-size="13" fill="#333" font-family="serif">4</text>`;
+  svg+=sLine(CLEF_W-3,staffTop,CLEF_W-3,staffBot,'#333',1.2);
+  let x=CLEF_W;
+  for(const meas of measures){
+    if(meas.chord)svg+=`<text x="${x+MW/2}" y="${staffTop-6}" font-size="10" fill="#7c3aed" text-anchor="middle" font-family="monospace">${meas.chord}</text>`;
+    svg+=renderNotes(meas.notes||[],clef,x+6,MW-12,staffBot,color);
+    svg+=sLine(x+MW,staffTop,x+MW,staffBot,'#555',0.8);x+=MW;
+  }
+  svg+=sLine(x-MW+MW,staffTop,x-MW+MW,staffBot,'#333',1.8);svg+='</svg>';return svg;
+}
+function grandStaffSVG(measures,color){
+  const PT=20,IGAP=18,PB=20,RHtop=PT,RHbot=RHtop+4*SS,LHtop=RHbot+IGAP,LHbot=LHtop+4*SS,svgH=LHbot+PB;
+  const CLEF_W=64,MW=164,w=CLEF_W+measures.length*MW+8;
+  let svg=`<svg width="${w}" height="${svgH}" style="display:block">`;
+  svg+=`<path d="M 7,${RHtop} q -16,${(LHbot-RHtop)/2} 0,${LHbot-RHtop}" stroke="#333" fill="none" stroke-width="3"/>`;
+  svg+=staveLines(12,RHtop,w-16);svg+=staveLines(12,LHtop,w-16);
+  svg+=sLine(12,RHtop,12,LHbot,'#333',1.5);
+  svg+=`<text x="15" y="${RHtop+SS*5+8}" font-size="52" fill="#333" font-family="serif">𝄞</text>`;
+  svg+=`<text x="15" y="${LHtop+SS*3+5}" font-size="34" fill="#333" font-family="serif">𝄢</text>`;
+  [RHtop,LHtop].forEach(t=>{svg+=`<text x="48" y="${t+SS*2+2}" font-size="13" fill="#333" font-family="serif">4</text><text x="48" y="${t+SS*4+2}" font-size="13" fill="#333" font-family="serif">4</text>`;});
+  svg+=sLine(CLEF_W-3,RHtop,CLEF_W-3,LHbot,'#333',1.2);
+  let x=CLEF_W;
+  for(const meas of measures){
+    if(meas.chord)svg+=`<text x="${x+MW/2}" y="${RHtop-5}" font-size="10" fill="#7c3aed" text-anchor="middle" font-family="monospace">${meas.chord}</text>`;
+    const rh=(meas.rh||meas.notes||[]).filter(n=>!n.pitch||(()=>{const m=n.pitch.match(/^([A-G])(#|b)?(\d)$/);return m&&(parseInt(m[3])>4||(parseInt(m[3])===4));})());
+    const lh=(meas.lh||meas.notes||[]).filter(n=>!n.pitch||(()=>{const m=n.pitch.match(/^([A-G])(#|b)?(\d)$/);return m&&parseInt(m[3])<=3;})());
+    svg+=renderNotes(rh,'treble',x+6,MW-12,RHbot,color);
+    svg+=renderNotes(lh,'bass',x+6,MW-12,LHbot,color);
+    svg+=sLine(x+MW,RHtop,x+MW,LHbot,'#555',0.8);x+=MW;
+  }
+  svg+=sLine(x,RHtop,x,LHbot,'#333',2);svg+='</svg>';return svg;
+}
+function drumStaffSVG(measures){
+  const PT=18,PB=18,MW=164,CLEF_W=42,staffTop=PT,staffBot=staffTop+4*SS,svgH=staffBot+PB;
+  const w=CLEF_W+measures.length*MW+8;
+  let svg=`<svg width="${w}" height="${svgH}" style="display:block">`;
+  svg+=staveLines(2,staffTop,w-4);
+  svg+=`<rect x="8" y="${staffTop+SS}" width="4" height="${SS*2}" fill="#555" rx="1"/><rect x="14" y="${staffTop+SS}" width="4" height="${SS*2}" fill="#555" rx="1"/>`;
+  svg+=sLine(CLEF_W-3,staffTop,CLEF_W-3,staffBot,'#333',1.2);
+  const DPOS={HH:8,CY:10,SD:4,BD:0};const DC={HH:'#e8a020',CY:'#50c878',SD:'#9060e8',BD:'#3b82f6'};
+  let x=CLEF_W;
+  for(const meas of measures){
+    if(meas.chord)svg+=`<text x="${x+MW/2}" y="${staffTop-5}" font-size="10" fill="#7c3aed" text-anchor="middle" font-family="monospace">${meas.chord}</text>`;
+    const pat=meas.pattern||{};const bw=(MW-12)/8;
+    Object.entries(pat).forEach(([drum,row])=>{const pos=DPOS[drum]??4;const dc=DC[drum]||'#333';const y=pY(pos,staffBot);(row||[]).forEach((on,bi)=>{if(!on)return;const cx=x+6+bi*bw+bw/2;svg+=sLine(cx-4,y-4,cx+4,y+4,dc,1.8)+sLine(cx+4,y-4,cx-4,y+4,dc,1.8);});});
+    svg+=sLine(x+MW,staffTop,x+MW,staffBot,'#555',0.8);x+=MW;
+  }
+  svg+=sLine(x,staffTop,x,staffBot,'#333',2);svg+='</svg>';return svg;
+}
+// Melody staff SVG (treble, interactive notes highlighted)
+function melodyStaffSVG(measures,color='#1eb8a0'){
+  return singleStaffSVG(measures.map(m=>({...m,notes:m.melNotes||[]})),'treble',color);
+}
+
+/* ─── DATA ─── */
+function mkSong(t='新しい曲'){return{id:gid(),title:t,status:'アイデア',key:'C',tempo:120,lyrics:'',memo:'',sections:DSECS.map(n=>({id:gid(),name:n,measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))})),selInstrs:['piano','bass','drums'],accomp:null,createdAt:Date.now(),updatedAt:Date.now()};}
+let songs=[],curId=null,curTab='lyrics',aiHist=[],sbVis=window.innerWidth>768,pickerOpen=null,notePickerCb=null;
+function save(){try{localStorage.setItem('kch_v4',JSON.stringify({songs,curId}));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem('kch_v4')||'{}');songs=d.songs||[];curId=d.curId||null;}catch(e){songs=[];curId=null;}}
+function cur(){return songs.find(s=>s.id===curId);}
+// ★ saveOnly: DOM再描画なしで保存するだけ
+function saveOnly(fn){const s=cur();if(!s)return;fn(s);s.updatedAt=Date.now();save();}
+function upd(fn){const s=cur();if(!s)return;fn(s);s.updatedAt=Date.now();save();renderSongList();renderTab();}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600);}
+
+/* ─── SONGS ─── */
+function addSong(){const s=mkSong();songs.unshift(s);curId=s.id;curTab='lyrics';aiHist=[];save();renderAll();}
+function delSong(id,e){e.stopPropagation();songs=songs.filter(s=>s.id!==id);if(curId===id)curId=songs[0]?.id||null;save();renderAll();}
+function selSong(id){curId=id;curTab='lyrics';aiHist=[];save();closeSB();renderAll();}
+function onTitleChange(v){const s=cur();if(!s)return;s.title=v;s.updatedAt=Date.now();save();renderSongList();}
+function toggleSB(){
+  const isMobile=window.innerWidth<=768;
+  if(isMobile){
+    const sb=document.getElementById('sidebar');
+    const ov=document.getElementById('sb-overlay');
+    const isOpen=sb.classList.contains('open');
+    sb.classList.toggle('open',!isOpen);
+    ov.classList.toggle('open',!isOpen);
+  } else {
+    sbVis=!sbVis;
+    document.getElementById('sidebar').style.display=sbVis?'flex':'none';
+  }
+}
+function closeSB(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('open');
+}
+
+/* ─── STATUS ─── */
+function initSDrop(){document.getElementById('stDrop').innerHTML=STATS.map(s=>`<div class="sopt" style="color:${STC[s]}" onclick="setStatus('${s}')">${s}</div>`).join('');}
+function toggleSDrop(){document.getElementById('stDrop').classList.toggle('open');}
+function setStatus(s){upd(song=>song.status=s);document.getElementById('stDrop').classList.remove('open');renderStatusBtn();}
+function renderStatusBtn(){const s=cur();if(!s)return;const b=document.getElementById('stBtn');b.textContent=s.status;b.style.background=STC[s.status]+'22';b.style.borderColor=STC[s.status]+'66';b.style.color=STC[s.status];}
+
+/* ─── RENDER ─── */
+const TABS=[{id:'lyrics',l:'歌詞'},{id:'melody',l:'メロディ'},{id:'chords',l:'コード'},{id:'accomp',l:'伴奏譜面'},{id:'score',l:'チャート'},{id:'ai',l:'AI相談'}];
+function renderAll(){
+  renderSongList();const s=cur();
+  ['topbar','tabsBar','tabC','bnav'].forEach(id=>document.getElementById(id).style.display='');
+  document.getElementById('emptyS').style.display='none';
+  if(!s){['topbar','tabsBar','tabC','bnav'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('emptyS').style.display='flex';return;}
+  document.getElementById('titleIn').value=s.title;renderStatusBtn();renderTabsBar();renderTab();renderBNav();
+}
+function renderSongList(){
+  const el=document.getElementById('songList');
+  if(!songs.length){el.innerHTML='<p style="color:var(--text3);font-size:11px;text-align:center;margin-top:18px;font-family:var(--mono)">— empty —</p>';return;}
+  el.innerHTML=[...songs].sort((a,b)=>b.updatedAt-a.updatedAt).map(s=>`<div class="si${s.id===curId?' active':''}" onclick="selSong('${s.id}')"><div class="sn">${esc(s.title)}</div><span class="stag" style="background:${STC[s.status]}18;color:${STC[s.status]}">${s.status}</span><button class="sdel" onclick="delSong('${s.id}',event)">×</button></div>`).join('');
+}
+function renderTabsBar(){document.getElementById('tabsBar').innerHTML=TABS.map(t=>`<button class="tbtn${t.id===curTab?' active':''}" onclick="switchTab('${t.id}')">${t.l}</button>`).join('');}
+function renderBNav(){document.querySelectorAll('.bnb').forEach(b=>b.classList.toggle('active',b.dataset.tab===curTab));}
+function switchTab(t){curTab=t;closeNotePicker();renderTabsBar();renderBNav();renderTab();}
+function renderTab(){
+  const s=cur();if(!s)return;const el=document.getElementById('tabC');
+  el.className='tab-c fi';void el.offsetWidth;
+  if(curTab==='lyrics')el.innerHTML=renderLyrics(s);
+  else if(curTab==='melody')el.innerHTML=renderMelody(s);
+  else if(curTab==='chords')el.innerHTML=renderChords(s);
+  else if(curTab==='accomp')el.innerHTML=renderAccomp(s);
+  else if(curTab==='score')el.innerHTML=renderScore(s);
+  else if(curTab==='ai'){el.innerHTML=renderAI(s);const m=document.getElementById('chatMsgs');if(m)m.scrollTop=m.scrollHeight;}
+}
+
+/* ─── LYRICS ─ テキストエリアはoninputでsaveOnlyを使い、再描画しない ─── */
+function renderLyrics(s){return`
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+  <div><label class="flbl">KEY</label><select class="inp" onchange="upd(s=>s.key=this.value)">${KEYS.map(k=>`<option${k===s.key?' selected':''}>${k}</option>`).join('')}</select></div>
+  <div><label class="flbl">BPM</label><input type="number" class="inp" style="width:72px" value="${s.tempo}" min="40" max="300" onchange="upd(s=>s.tempo=parseInt(this.value)||120)"></div>
+</div>
+<div style="margin-bottom:12px">
+  <label class="flbl">LYRICS</label>
+  <textarea class="txa" id="lyricsTA" style="min-height:240px"
+    placeholder="[Aメロ]&#10;&#10;[サビ]&#10;&#10;// フレーズメモをどんどん貼り付けてOK"
+    oninput="saveOnly(s=>s.lyrics=this.value)">${esc(s.lyrics)}</textarea>
+</div>
+<div>
+  <label class="flbl">MEMO</label>
+  <textarea class="txa" id="memoTA" style="min-height:65px"
+    placeholder="コンセプト、参考曲など"
+    oninput="saveOnly(s=>s.memo=this.value)">${esc(s.memo)}</textarea>
+</div>`;}
+
+/* ─── MELODY ─── */
+function renderMelody(s){
+  return`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+  <span style="font-family:var(--disp);font-size:15px;font-weight:700">メロディ</span>
+  <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">音符をタップして追加 · 鳴らして確認</span>
+</div>
+<div style="font-size:11px;color:var(--text2);background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:14px;border:1px solid var(--border);line-height:1.8">
+  各セクション・各小節に音符を追加できます。<br>コードタブでコード進行を入力しておくと、コード名も一緒に表示されます。
+</div>
+${s.sections.map((sec,si)=>`
+<div class="mel-sec">
+  <input class="mel-sec-name" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
+  <div style="margin-bottom:12px">
+    <div class="staff-block">
+      ${melodyStaffSVG(sec.measures)}
+    </div>
+  </div>
+  <div class="mel-measures">
+    ${sec.measures.map((m,mi)=>`
+    <div class="mel-meas">
+      <div class="mel-meas-chord">${mi+1}小節 ${m.chord?'('+m.chord+')':''}</div>
+      <div class="mel-notes" id="mn_${si}_${mi}">
+        ${(m.melNotes||[]).map((n,ni)=>`
+        <div class="mel-note-chip" onclick="previewNote('${n.pitch}')">
+          <span>${n.pitch}</span><span style="font-size:9px;color:rgba(30,184,160,.6)">${DURS.find(d=>d.v===n.duration)?.l||n.duration}</span>
+          <span class="del" onclick="event.stopPropagation();delMelNote(${si},${mi},${ni})">×</span>
+        </div>`).join('')}
+        <button class="add-note-btn" onclick="openNotePicker(event,${si},${mi})">＋ 音符</button>
+      </div>
+    </div>`).join('')}
+  </div>
+  <div style="display:flex;gap:6px">
+    <button class="btn btn-g" style="font-size:10px;padding:4px 10px" onclick="addMelMeasure(${si})">+ 小節</button>
+    ${sec.measures.length>1?`<button class="btn btn-g" style="font-size:10px;padding:4px 10px" onclick="delMelMeasure(${si})">- 小節</button>`:''}
+  </div>
+</div>`).join('')}`;}
+
+function previewNote(pitch){playNote(pitch);}
+function delMelNote(si,mi,ni){upd(s=>{s.sections[si].measures[mi].melNotes.splice(ni,1);});}
+function addMelMeasure(si){upd(s=>s.sections[si].measures.push({id:gid(),chord:s.sections[si].measures[s.sections[si].measures.length-1]?.chord||'',melNotes:[]}));}
+function delMelMeasure(si){upd(s=>{if(s.sections[si].measures.length>1)s.sections[si].measures.pop();});}
+
+/* ── Note Picker ── */
+let npState={pitch:'C4',dur:'q'};
+function openNotePicker(e,si,mi){
+  e.stopPropagation();
+  const btn=e.currentTarget;const rect=btn.getBoundingClientRect();
+  const npk=document.getElementById('npk');
+  npk.style.display='block';
+  const top=rect.bottom+6;const left=Math.min(rect.left,window.innerWidth-290);
+  npk.style.top=top+'px';npk.style.left=left+'px';
+  notePickerCb=(pitch,dur)=>addMelNote(si,mi,pitch,dur);
+  renderNotePicker();
+}
+function renderNotePicker(){
+  const npk=document.getElementById('npk');
+  npk.innerHTML=`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+  <span style="font-size:11px;font-weight:700;color:var(--teal);font-family:var(--mono)">音符を追加</span>
+  <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px" onclick="closeNotePicker()">✕</button>
+</div>
+<div class="npk-row">
+  <span class="npk-lbl">オクターブ</span>
+  <div style="display:flex;gap:3px">${OCTAVES.map(o=>`<button class="npk-note${npState.pitch.endsWith(o)?'.sel':''} ${npState.pitch.slice(-1)==String(o)?'sel':''}" onclick="npSetOct(${o})">${o}</button>`).join('')}</div>
+</div>
+<div class="npk-row">
+  <span class="npk-lbl">音名</span>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES_JP.map(n=>{const full=n+npState.pitch.slice(-1);const isSel=npState.pitch===full;return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}</div>
+</div>
+<div class="npk-row"><span class="npk-lbl">音価</span><div class="dur-row">${DURS.map(d=>`<button class="dur-btn${npState.dur===d.v?' sel':''}" onclick="npSetDur('${d.v}')">${d.l}</button>`).join('')}</div></div>
+<div style="margin-top:10px;display:flex;gap:6px;align-items:center">
+  <div style="flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--teal)">${npState.pitch} / ${DURS.find(d=>d.v===npState.dur)?.l}</div>
+  <button class="btn" style="background:var(--teal);color:var(--bg);padding:7px 14px" onclick="npPreview()">▶</button>
+  <button class="btn btn-a" style="padding:7px 14px" onclick="npConfirm()">追加</button>
+</div>`;
+}
+function npSetOct(o){const root=npState.pitch.replace(/\d/,'');npState.pitch=root+o;renderNotePicker();}
+function npSetNote(n){const oct=npState.pitch.slice(-1);npState.pitch=n+oct;renderNotePicker();}
+function npSetDur(d){npState.dur=d;renderNotePicker();}
+function npPreview(){playNote(npState.pitch);}
+function npConfirm(){if(notePickerCb)notePickerCb(npState.pitch,npState.dur);closeNotePicker();}
+function closeNotePicker(){document.getElementById('npk').style.display='none';notePickerCb=null;}
+function addMelNote(si,mi,pitch,dur){upd(s=>{if(!s.sections[si].measures[mi].melNotes)s.sections[si].measures[mi].melNotes=[];s.sections[si].measures[mi].melNotes.push({pitch,duration:dur,startBeat:s.sections[si].measures[mi].melNotes.length*0.5});});}
+
+/* ─── CHORDS ─── */
+function renderChords(s){return`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <span style="font-family:var(--disp);font-size:15px;font-weight:700">コード進行</span>
+  <button class="btn btn-g" style="font-size:11px;padding:5px 11px" onclick="addSection()">＋ セクション</button>
+</div>
+<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">▶ タップで音が鳴ります</div>
+${s.sections.map((sec,si)=>`
+<div class="sec-wr">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <input class="sni" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
+    <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="addMeasure(${si})">+小節</button>
+    ${s.sections.length>1?`<button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px" onclick="delSection(${si})">×</button>`:''}
+  </div>
+  <div class="cg" id="cg_${si}">
+    ${sec.measures.map((m,mi)=>`
+    <div class="cc${m.chord?' has':''}" id="cc_${si}_${mi}" onclick="handleCC(event,${si},${mi},'${esc(m.chord)}')">
+      <span class="bn">${mi+1}</span>
+      <span class="cn">${m.chord||'–'}</span>
+    </div>`).join('')}
+  </div>
+  <div class="qr">${QP.map(p=>`<button class="qb" onclick="applyProg(${si},${JSON.stringify(p.c)})">${p.l}</button>`).join('')}</div>
+</div>`).join('')}`;}
+
+function handleCC(e,si,mi,c){e.stopPropagation();closeAllPickers();const cell=document.getElementById(`cc_${si}_${mi}`);if(c)playChord(c,cell);openPicker(e,si,mi,c);}
+function openPicker(e,si,mi,curC){
+  const cell=document.getElementById(`cc_${si}_${mi}`);
+  const div=document.createElement('div');div.className='cpk';
+  div.innerHTML=`<div style="display:flex;gap:5px;margin-bottom:7px"><input id="cpIn" class="inp" style="flex:1;font-size:12px;padding:5px 8px" placeholder="直接入力"><button class="btn btn-a" style="padding:5px 10px;font-size:11px" onclick="cpApply(${si},${mi})">✓</button></div><div style="max-height:150px;overflow-y:auto;margin-bottom:7px">${CL.map(row=>`<div class="cpr">${row.map(c=>`<button class="cpb${c===curC?' a':''}" onclick="setChordPlay(${si},${mi},'${c}')">${c}</button>`).join('')}</div>`).join('')}</div><div style="display:flex;gap:5px;padding-top:7px;border-top:1px solid var(--border2)"><button class="btn btn-g" style="flex:1;font-size:10px;padding:5px" onclick="setChord(${si},${mi},'')">クリア</button><button class="btn btn-g" style="flex:1;font-size:10px;padding:5px;border-color:var(--coral);color:var(--coral)" onclick="delMeasure(${si},${mi})">削除</button></div>`;
+  cell.appendChild(div);setTimeout(()=>document.getElementById('cpIn')?.focus(),50);
+}
+function setChordPlay(si,mi,c){setChord(si,mi,c);setTimeout(()=>playChord(c,document.getElementById(`cc_${si}_${mi}`)),50);}
+function cpApply(si,mi){const v=document.getElementById('cpIn')?.value?.trim();if(v)setChordPlay(si,mi,v);}
+function setChord(si,mi,c){upd(s=>s.sections[si].measures[mi].chord=c);closeAllPickers();}
+function closeAllPickers(){document.querySelectorAll('.cpk').forEach(el=>el.remove());}
+function addSection(){upd(s=>s.sections.push({id:gid(),name:'新セクション',measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))}));}
+function delSection(si){upd(s=>{if(s.sections.length>1)s.sections.splice(si,1);});}
+function addMeasure(si){upd(s=>s.sections[si].measures.push({id:gid(),chord:'',melNotes:[]}));}
+function delMeasure(si,mi){upd(s=>{if(s.sections[si].measures.length>1)s.sections[si].measures.splice(mi,1);});closeAllPickers();}
+function applyProg(si,cs){upd(s=>{s.sections[si].measures=cs.map((c,i)=>({...s.sections[si].measures[i],id:s.sections[si].measures[i]?.id||gid(),chord:c,melNotes:s.sections[si].measures[i]?.melNotes||[]}));});}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.status-wr'))document.getElementById('stDrop').classList.remove('open');
+  if(!e.target.closest('.cc')&&!e.target.closest('.cpk'))closeAllPickers();
+  if(!e.target.closest('#npk')&&!e.target.closest('.add-note-btn'))closeNotePicker();
+});
+
+/* ─── ACCOMP ─── */
+function renderAccomp(s){
+  const ac=s.accomp;
+  return`
+<div style="margin-bottom:12px"><label class="flbl">楽器を選択</label>
+<div class="isel">${Object.entries(INSTRS).map(([k,v])=>{const on=(s.selInstrs||[]).includes(k);return`<button class="ibtn" style="border-color:${on?v.color:v.color+'33'};color:${on?v.color:'var(--text3)'};background:${on?v.color+'18':'transparent'}" onclick="toggleInstr('${k}')">${v.label}</button>`;}).join('')}</div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
+  <button class="btn btn-a" id="genBtn" onclick="generateAccomp()">✦ 伴奏を生成</button>
+  ${ac?`<button class="btn btn-t" onclick="exportMusicXML()">⬇ MusicXML出力 (Logic用)</button>`:''}
+</div>
+${!ac?`<div style="text-align:center;padding:44px 20px"><div style="font-size:36px;margin-bottom:12px;opacity:.3">🎼</div><div style="color:var(--text3);font-size:12px;line-height:2;font-family:var(--mono)">楽器を選んで、伴奏を生成。<br><span style="font-size:10px">コードタブでコード進行を入れておくと精度UP</span></div></div>`
+:Object.entries(INSTRS).filter(([k])=>ac[k]).map(([k,v])=>`<div style="margin-bottom:20px"><div class="staff-part-lbl" style="color:${v.color}">▸ ${v.label}</div>${ac[k].sections?.map(sec=>`<div style="margin-bottom:12px"><div class="staff-sec-lbl">${sec.sectionName||sec.name||'SEC'}</div><div class="staff-block">${k==='piano'?grandStaffSVG(sec.measures,v.color):k==='drums'?drumStaffSVG(sec.measures):singleStaffSVG(sec.measures,k==='bass'?'bass':'treble',v.color)}</div></div>`).join('')}</div>`).join('')}`;}
+
+function toggleInstr(k){upd(s=>{const i=(s.selInstrs||[]).indexOf(k);if(i>=0)s.selInstrs.splice(i,1);else s.selInstrs.push(k);});}
+
+async function generateAccomp(){
+  const s=cur();if(!s)return;const btn=document.getElementById('genBtn');btn.textContent='生成中...';btn.disabled=true;
+  const cp=s.sections.map(x=>`${x.name}:${x.measures.map(m=>m.chord||'–').join('|')}`).join('\n');
+  const instrs=s.selInstrs||['piano','bass','drums'];
+  const sys=`音楽アレンジャー。コード進行に合わせたJ-POP系伴奏をJSONのみで返す。説明・コードブロック不要。
+フォーマット(選択楽器のみ):
+{"piano":{"sections":[{"sectionName":"Aメロ","measures":[{"chord":"C","rh":[{"pitch":"E4","startBeat":0,"duration":"h"},{"pitch":"G4","startBeat":2,"duration":"h"}],"lh":[{"pitch":"C3","startBeat":0,"duration":"q"},{"pitch":"G3","startBeat":1,"duration":"q"},{"pitch":"C3","startBeat":2,"duration":"q"},{"pitch":"G3","startBeat":3,"duration":"q"}]}]}]},
+"bass":{"sections":[{"sectionName":"Aメロ","measures":[{"chord":"C","notes":[{"pitch":"C2","startBeat":0,"duration":"h"},{"pitch":"G2","startBeat":2,"duration":"q"},{"pitch":"E2","startBeat":3,"duration":"q"}]}]}]},
+"guitar":{"sections":[{"sectionName":"Aメロ","measures":[{"chord":"C","notes":[{"pitch":"E3","startBeat":0,"duration":"q"},{"pitch":"G3","startBeat":1,"duration":"q"},{"pitch":"B3","startBeat":2,"duration":"q"},{"pitch":"G3","startBeat":3,"duration":"q"}]}]}]},
+"drums":{"sections":[{"sectionName":"Aメロ","measures":[{"chord":"C","pattern":{"HH":[1,1,1,1,1,1,1,1],"SD":[0,0,0,0,1,0,0,0],"BD":[1,0,0,0,1,0,0,0],"CY":[1,0,0,0,0,0,0,0]}}]}]}}
+ルール:piano rh=C4以上,lh=C3以下。bass=C1-C3,guitar=E2-E5。startBeat=0〜3,duration=w/h/q/8/16。各小節合計4拍。drums=8拍8要素 0/1。各セクション2小節。楽器:${instrs.join(',')}`;
+  try{
+    const raw=await callGemini(sys,[{role:'user',content:`${s.title} Key:${s.key} BPM:${s.tempo}\n${cp}`}],1200);
+    const t=raw.replace(/```json|```/g,'').trim();
+    const p=JSON.parse(t);upd(song=>{song.accomp=p;});toast('🎼 伴奏譜面を生成しました！');
+  }catch(e){
+    console.error(e);
+    if(e.message==='NO_KEY'){openSettings();}
+    else{alert('生成失敗。コード進行を入力してから再試行してください。');}
+  }
+  if(btn){btn.textContent='✦ 伴奏を生成';btn.disabled=false;}
+}
+
+function exportMusicXML(){
+  const s=cur();if(!s?.accomp)return;
+  const dm={w:16,h:8,q:4,'8':2,'16':1},tm={w:'whole',h:'half',q:'quarter','8':'eighth','16':'16th'};
+  const ac=s.accomp;const partDefs=[];
+  if(ac.piano){partDefs.push({id:'P1',name:'ピアノ右手',instr:'piano',clef:'treble',hand:'rh'});partDefs.push({id:'P2',name:'ピアノ左手',instr:'piano',clef:'bass',hand:'lh'});}
+  if(ac.bass)partDefs.push({id:`P${partDefs.length+1}`,name:'ベース',instr:'bass',clef:'bass',hand:null});
+  if(ac.guitar)partDefs.push({id:`P${partDefs.length+1}`,name:'ギター',instr:'guitar',clef:'treble',hand:null});
+  const pl=partDefs.map(p=>`<score-part id="${p.id}"><part-name>${p.name}</part-name></score-part>`).join('');
+  const parts=partDefs.map(p=>{let mn=1;const data=ac[p.instr];if(!data)return'';const cl=p.clef==='bass'?'bass':'treble';
+    const ms=data.sections?.flatMap(sec=>(sec.measures||[]).map(meas=>{
+      const src=p.hand==='rh'?meas.rh||[]:p.hand==='lh'?meas.lh||[]:meas.notes||[];
+      let notes=src.filter(n=>n.pitch&&n.pitch!=='R').map(n=>{const m=n.pitch.match(/^([A-G])(#|b)?(\d)$/);if(!m)return null;return{step:m[1],alter:m[2]==='#'?1:m[2]==='b'?-1:null,oct:m[3],dur:n.duration||'q',type:tm[n.duration||'q']||'quarter'};}).filter(Boolean);
+      if(!notes.length)notes=[{rest:true,dur:'w',type:'whole'}];
+      const nx=notes.map(n=>n.rest?`<note><rest/><duration>16</duration><type>whole</type></note>`:`<note><pitch><step>${n.step}</step>${n.alter!=null?`<alter>${n.alter}</alter>`:''}<octave>${n.oct}</octave></pitch><duration>${dm[n.dur]||4}</duration><type>${n.type}</type></note>`).join('');
+      const attr=mn===1?`<attributes><divisions>4</divisions><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>${cl==='bass'?'F':'G'}</sign><line>${cl==='bass'?4:2}</line></clef></attributes>`:'';
+      return`<measure number="${mn++}">${attr}${nx}</measure>`;
+    }))||[];
+    return`<part id="${p.id}">${ms.join('')}</part>`;
+  }).join('');
+  const xml=`<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd"><score-partwise version="3.1"><work><work-title>${esc(s.title)}</work-title></work><part-list>${pl}</part-list>${parts}</score-partwise>`;
+  const blob=new Blob([xml],{type:'application/xml'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`${s.title}.musicxml`;a.click();URL.revokeObjectURL(url);
+  toast('✓ MusicXMLをダウンロード。LogicProで開いてください');
+}
+
+/* ─── SCORE ─── */
+function renderScore(s){return`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+  <span style="font-family:var(--disp);font-size:15px;font-weight:700">コードチャート</span>
+  <button class="btn btn-g" style="font-size:11px;padding:5px 12px" onclick="printScore()">🖨 PDF保存</button>
+</div>
+<div class="sc-wr">
+  <div class="sc-ti">${esc(s.title)}</div>
+  <div class="sc-meta">Key: ${s.key} · BPM: ${s.tempo}</div>
+  ${s.sections.map(sec=>`<div style="margin-bottom:16px"><div class="sc-sn">${esc(sec.name)}</div><div style="display:flex;flex-wrap:wrap;gap:6px">${sec.measures.map((m,i)=>`<div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${i+1}</div><div class="sc-ch${m.chord?' has':''}">${m.chord||'–'}</div></div>`).join('')}</div></div>`).join('')}
+  ${s.lyrics?`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border2)"><div class="flbl">LYRICS</div><pre style="color:var(--text2);font-size:13px;line-height:2.1;white-space:pre-wrap;font-family:var(--font)">${esc(s.lyrics)}</pre></div>`:''}
+</div>`;}
+function printScore(){const s=cur();if(!s)return;const w=window.open('','_blank');if(!w)return;w.document.write(`<html><head><title>${esc(s.title)}</title><style>body{font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;max-width:720px;margin:0 auto;color:#111}h1{font-size:24px;font-weight:800;margin-bottom:4px}.meta{color:#888;font-size:12px;font-family:monospace;margin-bottom:24px}.sec{margin-bottom:20px}.sn{font-weight:700;font-size:12px;color:#7c3aed;margin-bottom:8px;padding-bottom:3px;border-bottom:2px solid #7c3aed22;font-family:monospace}.cs{display:flex;flex-wrap:wrap;gap:6px}.c{text-align:center}.cn{font-size:9px;color:#bbb;margin-bottom:2px;font-family:monospace}.ch{border:1px solid #ddd;border-radius:7px;padding:7px 12px;font-size:16px;font-weight:700;color:#7c3aed;min-width:52px;font-family:monospace;text-align:center}.lyr{margin-top:26px;padding-top:20px;border-top:2px solid #eee}pre{line-height:2.2;font-size:14px;white-space:pre-wrap;font-family:inherit}</style></head><body><h1>${esc(s.title)}</h1><div class="meta">Key: ${s.key} · BPM: ${s.tempo}</div>${s.sections.map(sec=>`<div class="sec"><div class="sn">${esc(sec.name)}</div><div class="cs">${sec.measures.map((m,i)=>`<div class="c"><div class="cn">${i+1}</div><div class="ch">${m.chord||'–'}</div></div>`).join('')}</div></div>`).join('')}${s.lyrics?`<div class="lyr"><h3 style="font-size:13px;color:#888;margin-bottom:10px">歌詞</h3><pre>${esc(s.lyrics)}</pre></div>`:''}</body></html>`);w.document.close();setTimeout(()=>w.print(),400);}
+
+/* ─── GEMINI API ─── */
+const GEMINI_KEY_ST='songbook_gemini_key';
+function getGeminiKey(){return localStorage.getItem(GEMINI_KEY_ST)||'';}
+function setGeminiKey(k){localStorage.setItem(GEMINI_KEY_ST,k);}
+
+async function callGemini(systemText,messages,maxTokens=800){
+  const key=getGeminiKey();
+  if(!key)throw new Error('NO_KEY');
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+  const body={
+    system_instruction:{parts:[{text:systemText}]},
+    contents:messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),
+    generationConfig:{maxOutputTokens:maxTokens}
+  };
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+
+/* ─── AI ─── */
+function renderAI(s){
+  const hasKey=!!getGeminiKey();
+  const SUGG=['Aメロのコード提案して','サビをドラマチックにして','黄昏コード教えて','伴奏アレンジのアドバイス'];
+  return`<div class="chat-wr" style="height:calc(100vh - 175px)">
+${!hasKey?`<div style="background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--amber)">
+  ⚠️ AIを使うにはGemini APIキーが必要です。
+  <button class="btn btn-a" style="margin-left:10px;padding:4px 10px;font-size:11px" onclick="openSettings()">設定を開く</button>
+</div>`:''}
+<div class="chat-msgs" id="chatMsgs">${aiHist.length===0?`<div class="mb mb-a">「${esc(s.title)}」の制作サポートします！コード・アレンジ・歌詞など何でもどうぞ 🎵</div>`:''} ${aiHist.map(m=>`<div class="mb ${m.role==='user'?'mb-u':'mb-a'}">${m.content.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}<div id="chatBottom"></div></div>
+<div class="chat-iw">
+  <div class="sugg">${SUGG.map(sg=>`<button class="sg" onclick="sendAI('${sg}')">${sg}</button>`).join('')}</div>
+  <div class="chat-row"><input id="chatIn" class="chat-in" placeholder="コード、アレンジ、メロディなど..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"><button class="btn btn-a" onclick="sendAI()">送信</button></div>
+</div></div>`;}
+
+async function sendAI(text){
+  const s=cur();if(!s)return;
+  if(!getGeminiKey()){openSettings();return;}
+  const inp=document.getElementById('chatIn');const t=(text||inp?.value||'').trim();if(!t)return;if(inp)inp.value='';
+  aiHist.push({role:'user',content:t});renderTab();
+  setTimeout(()=>document.getElementById('chatBottom')?.scrollIntoView({behavior:'smooth'}),50);
+  const cp=s.sections.map(x=>`${x.name}:${x.measures.map(m=>m.chord||'–').join('|')}`).join('\n');
+  const sys=`J-POP音楽制作アドバイザー。「${s.title}」制作中(${s.status})。Key:${s.key} BPM:${s.tempo}\nコード:\n${cp}\n歌詞:${s.lyrics||'未入力'}\n短く答えて。コード提案はC→Am→F→G形式で。`;
+  try{
+    const text=await callGemini(sys,aiHist,800);
+    aiHist.push({role:'assistant',content:text});
+  }catch(e){
+    if(e.message==='NO_KEY'){openSettings();return;}
+    aiHist.push({role:'assistant',content:`⚠️ エラー: ${e.message}`});
+  }
+  renderTab();setTimeout(()=>document.getElementById('chatBottom')?.scrollIntoView({behavior:'smooth'}),100);
+}
+
+/* ─── GOOGLE DRIVE SYNC ─── */
+const CLIENT_ID_ST='songbook_oauth_cid';
+const DRIVE_FID_ST='songbook_drive_fid';
+function getClientId(){return localStorage.getItem(CLIENT_ID_ST)||'';}
+function setClientId(v){localStorage.setItem(CLIENT_ID_ST,v);}
+
+let tokenClient=null,accessToken=null,tokenExpiry=0;
+let driveFileId=localStorage.getItem(DRIVE_FID_ST)||null;
+let driveReady=false,driveSyncing=false,driveSaveTimer=null;
+
+function setSyncStatus(msg){
+  const el=document.getElementById('syncStatus');
+  if(!el)return;el.textContent=msg;el.style.opacity=1;
+  if(msg.startsWith('✓'))setTimeout(()=>{el.style.opacity=.4;},3000);
+}
+
+function initGIS(){
+  const cid=getClientId();
+  if(!cid||typeof google==='undefined')return;
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:cid,
+    scope:'https://www.googleapis.com/auth/drive.appdata',
+    callback:async(resp)=>{
+      if(resp.error){setSyncStatus('⚠ 認証失敗');return;}
+      accessToken=resp.access_token;
+      tokenExpiry=Date.now()+(resp.expires_in-60)*1000;
+      driveReady=true;renderSyncBar();
+      setSyncStatus('読み込み中...');
+      const ok=await driveLoad();
+      if(ok){renderAll();}
+      setSyncStatus('✓ Drive同期済み');
+    }
+  });
+}
+
+async function signInDrive(){
+  if(!getClientId()){openSettings();return;}
+  if(!tokenClient){
+    // GISがまだロードされていない場合は少し待つ
+    if(typeof google==='undefined'){toast('Google SDKを読み込み中...');setTimeout(()=>{initGIS();signInDrive();},1000);return;}
+    initGIS();
+  }
+  tokenClient.requestAccessToken({prompt:driveReady?'':'consent'});
+}
+
+async function ensureToken(){
+  if(accessToken&&Date.now()<tokenExpiry)return true;
+  if(!tokenClient)return false;
+  return new Promise(resolve=>{
+    const orig=tokenClient.callback;
+    tokenClient.callback=(resp)=>{
+      tokenClient.callback=orig;
+      if(!resp.error){accessToken=resp.access_token;tokenExpiry=Date.now()+(resp.expires_in-60)*1000;resolve(true);}
+      else resolve(false);
+    };
+    tokenClient.requestAccessToken({prompt:''});
+  });
+}
+
+async function driveLoad(){
+  if(!await ensureToken())return false;
+  try{
+    if(!driveFileId){
+      const r=await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='songbook_data.json'",
+        {headers:{Authorization:`Bearer ${accessToken}`}});
+      const d=await r.json();
+      if(d.files?.length>0){driveFileId=d.files[0].id;localStorage.setItem(DRIVE_FID_ST,driveFileId);}
+    }
+    if(!driveFileId)return false;
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
+      {headers:{Authorization:`Bearer ${accessToken}`}});
+    const d=await r.json();
+    if(Array.isArray(d.songs)){
+      songs=d.songs;
+      if(!curId||!songs.find(s=>s.id===curId))curId=songs[0]?.id||null;
+      _origSave();return true;
+    }
+  }catch(e){console.error('Drive load error',e);}
+  return false;
+}
+
+async function driveSaveNow(){
+  if(!driveReady||!await ensureToken())return;
+  if(driveSyncing){driveSaveTimer=setTimeout(driveSaveNow,1500);return;}
+  driveSyncing=true;setSyncStatus('保存中...');
+  const content=JSON.stringify({songs,curId});
+  try{
+    if(driveFileId){
+      const r=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
+        {method:'PATCH',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:content});
+      if(r.status===404){driveFileId=null;localStorage.removeItem(DRIVE_FID_ST);}
+    }
+    if(!driveFileId){
+      const meta={name:'songbook_data.json',parents:['appDataFolder']};
+      const form=new FormData();
+      form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+      form.append('file',new Blob([content],{type:'application/json'}));
+      const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        {method:'POST',headers:{Authorization:`Bearer ${accessToken}`},body:form});
+      const d=await r.json();
+      if(d.id){driveFileId=d.id;localStorage.setItem(DRIVE_FID_ST,driveFileId);}
+    }
+    setSyncStatus('✓ Drive同期済み');
+  }catch(e){setSyncStatus('⚠ 保存失敗');}
+  driveSyncing=false;
+}
+
+// saveをオーバーライド：ローカル保存後、Driveに1秒debounceで同期
+const _origSave=save;
+function save(){
+  _origSave();
+  if(driveReady){clearTimeout(driveSaveTimer);driveSaveTimer=setTimeout(driveSaveNow,1000);}
+}
+
+/* ─── 設定モーダル ─── */
+function openSettings(){
+  document.getElementById('settingsModal').style.display='flex';
+  renderSettingsModal();
+}
+function closeSettings(){document.getElementById('settingsModal').style.display='none';}
+
+function renderSettingsModal(){
+  const hasGemini=!!getGeminiKey();
+  const hasCid=!!getClientId();
+  document.getElementById('settingsContent').innerHTML=`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+  <span style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--amber)">⚙ 設定</span>
+  <button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:4px" onclick="closeSettings()">✕</button>
+</div>
+
+<div style="background:var(--bg4);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:14px">
+  <div style="font-size:11px;font-weight:700;color:var(--amber);font-family:var(--mono);margin-bottom:8px">🤖 Gemini API キー</div>
+  <input id="geminiKeyIn" type="password" class="inp" style="width:100%;margin-bottom:8px"
+    placeholder="AIzaSy..." value="${hasGemini?'●●●●●●●●●●●●':''}">
+  <button class="btn btn-a" style="width:100%;font-size:12px" onclick="saveGeminiKey()">保存</button>
+  <div style="font-size:10px;color:var(--text3);margin-top:7px;line-height:1.7">
+    <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--teal)">Google AI Studio</a> でAPIキーを取得してください（無料）
+  </div>
+</div>
+
+<div style="background:var(--bg4);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:14px">
+  <div style="font-size:11px;font-weight:700;color:var(--teal);font-family:var(--mono);margin-bottom:8px">☁ Google Drive 自動同期</div>
+  <input id="clientIdIn" class="inp" style="width:100%;margin-bottom:8px"
+    placeholder="xxxx.apps.googleusercontent.com" value="${getClientId()}">
+  <button class="btn btn-t" style="width:100%;font-size:12px;margin-bottom:10px" onclick="saveClientId()">保存してログイン</button>
+  <div style="font-size:10px;color:var(--text3);line-height:1.8;border-top:1px solid var(--border);padding-top:8px">
+    <strong style="color:var(--text2)">OAuth Client ID の取得手順（一度だけ）</strong><br>
+    1. <a href="https://console.cloud.google.com/" target="_blank" style="color:var(--teal)">Google Cloud Console</a> を開く<br>
+    2. プロジェクト作成 → 「APIとサービス」→「ライブラリ」→ <strong>Google Drive API</strong> を有効化<br>
+    3. 「認証情報」→「認証情報を作成」→「OAuth 2.0 クライアントID」→ <strong>ウェブアプリケーション</strong><br>
+    4. 「承認済みのJavaScriptオリジン」に <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">http://127.0.0.1:5500</code> を追加<br>
+    5. 作成されたクライアントIDをここに貼り付け
+  </div>
+</div>
+
+<div style="font-size:10px;color:var(--text3);text-align:center;font-family:var(--mono)">
+  データはブラウザのlocalStorageとGoogle Driveのアプリデータフォルダに保存されます
+</div>`;
+}
+
+function saveGeminiKey(){
+  const v=document.getElementById('geminiKeyIn')?.value?.trim();
+  if(v&&!v.startsWith('●')){setGeminiKey(v);toast('✓ Gemini APIキーを保存しました');}
+  closeSettings();renderSyncBar();
+}
+function saveClientId(){
+  const v=document.getElementById('clientIdIn')?.value?.trim();
+  if(v){setClientId(v);initGIS();closeSettings();signInDrive();}
+}
+
+/* ─── SYNC BAR ─── */
+function renderSyncBar(){
+  const el=document.getElementById('syncBar');if(!el)return;
+  const hasKey=!!getGeminiKey();
+  el.innerHTML=`
+  <div style="padding:10px 12px;border-top:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
+      <span id="syncStatus" style="flex:1;font-size:10px;color:${driveReady?'var(--teal)':'var(--text3)'};font-family:var(--mono);opacity:${driveReady?1:.6}">
+        ${driveReady?'✓ Drive同期中':'⬤ ローカルのみ'}
+      </span>
+      ${driveReady
+        ?`<button class="btn btn-g" style="font-size:9px;padding:3px 7px" title="最新データを読み込む"
+            onclick="driveLoad().then(ok=>{if(ok){renderAll();toast('✓ 最新データを読み込みました');}})">↻</button>`
+        :`<button class="btn btn-t" style="font-size:9px;padding:3px 9px" onclick="signInDrive()">Driveにログイン</button>`
+      }
+    </div>
+    <button class="btn btn-g" style="width:100%;font-size:10px;padding:5px;${hasKey?'color:var(--teal);border-color:rgba(30,184,160,.4)':''}"
+      onclick="openSettings()">⚙ 設定${hasKey?' (Gemini ✓)':' — APIキー未設定'}</button>
+  </div>`;
+}
+
+/* ─── INIT ─── */
+load();initSDrop();
+if(!curId&&songs.length===0){const s=mkSong('無題の曲 1');songs.push(s);curId=s.id;localStorage.setItem('kch_v4',JSON.stringify({songs,curId}));}
+if(window.innerWidth<=768)sbVis=false;
+if(window.innerWidth>768){document.getElementById('sidebar').style.display=sbVis?'flex':'none';}
+renderAll();renderSyncBar();
+// GISがロードされたらClientIDがあれば自動的に初期化＆サイレントサインイン
+window.addEventListener('load',()=>{
+  if(getClientId()&&typeof google!=='undefined'){
+    initGIS();
+    // サイレント試行（promptなし）
+    setTimeout(()=>tokenClient?.requestAccessToken({prompt:''}),500);
+  }
+});
+</script>
+</body>
+</html>

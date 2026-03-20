@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>曲帳</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sb-hd">
+      <div class="sb-logo">曲帳<small>songbook</small></div>
+      <button class="btn btn-g" style="margin-left:auto;padding:3px 7px;font-size:11px" onclick="toggleSB()">✕</button>
+    </div>
+    <button class="sb-new" onclick="addSong()">＋ 新しい曲</button>
+    <div class="sb-list" id="songList"></div>
+    <div id="syncBar"></div>
+  </div>
+  <div id="main">
+    <div class="topbar" id="topbar">
+      <button class="btn btn-g" style="padding:5px 7px;font-size:15px;flex-shrink:0" onclick="toggleSB()">
+        <svg width="16" height="13" viewBox="0 0 16 13" fill="currentColor"><rect y="0" width="16" height="1.8" rx="1"/><rect y="5.6" width="12" height="1.8" rx="1"/><rect y="11.2" width="16" height="1.8" rx="1"/></svg>
+      </button>
+      <input class="title-in" id="titleIn" placeholder="曲タイトル" oninput="onTitleChange(this.value)">
+      <div class="status-wr">
+        <button class="spill" id="stBtn" onclick="toggleSDrop()"></button>
+        <div class="sdrop" id="stDrop"></div>
+      </div>
+    </div>
+    <div class="tabs-bar" id="tabsBar"></div>
+    <div class="tab-c" id="tabC"></div>
+    <div id="bnav">
+      <button class="bnb" data-tab="lyrics" onclick="switchTab('lyrics')"><span class="bnb-ic">✏️</span>歌詞</button>
+      <button class="bnb" data-tab="melody" onclick="switchTab('melody')"><span class="bnb-ic">🎵</span>メロ</button>
+      <button class="bnb" data-tab="chords" onclick="switchTab('chords')"><span class="bnb-ic">🎸</span>コード</button>
+      <button class="bnb" data-tab="accomp" onclick="switchTab('accomp')"><span class="bnb-ic">🎼</span>伴奏</button>
+      <button class="bnb" data-tab="ai" onclick="switchTab('ai')"><span class="bnb-ic">✦</span>AI</button>
+    </div>
+    <div class="empty" id="emptyS" style="display:none">
+      <div style="font-size:44px;opacity:.3">🎵</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text2)">まだ曲がありません</div>
+      <button class="btn btn-a" onclick="addSong()">最初の曲を作る</button>
+    </div>
+  </div>
+</div>
+<div id="sb-overlay" onclick="closeSB()"></div>
+<div id="toast"></div>
+<!-- Note picker popup (shared) -->
+<div id="npk" class="npk" style="display:none"></div>
+<!-- Settings modal -->
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:20px;width:min(460px,100%);max-height:90vh;overflow-y:auto" id="settingsContent"></div>
+</div>
+
+<!-- ロード順序: constants → audio → staff → data → gemini → tabs → ui → drive → app -->
+<script src="js/constants.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/staff.js"></script>
+<script src="js/data.js"></script>
+<script src="js/gemini.js"></script>
+<script src="js/tabs.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/drive.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
