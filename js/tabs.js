@@ -204,28 +204,84 @@ function openNotePicker(e,si,mi){
   const btn=e.currentTarget;const rect=btn.getBoundingClientRect();
   const npk=document.getElementById('npk');
   npk.style.display='block';
-  const top=rect.bottom+6;const left=Math.min(rect.left,window.innerWidth-290);
+  const top=rect.bottom+6;const left=Math.min(rect.left,window.innerWidth-310);
   npk.style.top=top+'px';npk.style.left=left+'px';
   notePickerCb=(pitch,dur)=>addMelNote(si,mi,pitch,dur);
   renderNotePicker();
 }
 
+/* ── ピアノ鍵盤SVG生成 ── */
+function _pianoSVG(){
+  const WW=11,WH=44,BW=7,BH=27;
+  const curOct=parseInt(npState.pitch.slice(-1));
+  // 白鍵：C D E F G A B の順
+  const WN=['C','D','E','F','G','A','B'];
+  // 黒鍵：白鍵インデックスと音名
+  const BK=[{wi:0,n:'C#'},{wi:1,n:'D#'},{wi:3,n:'F#'},{wi:4,n:'G#'},{wi:5,n:'A#'}];
+  // 教育ラベル（C音の下に表示）
+  const CLBL={3:'低音域',4:'中央のド',5:'高音域'};
+  const octs=[3,4,5];
+  const svgW=octs.length*7*WW+1;
+  let ws='',bs='',lbls='';
+
+  octs.forEach((oct,oi)=>{
+    const ox=oi*7*WW;
+    const isSelOct=oct===curOct;
+    WN.forEach((n,wi)=>{
+      const pitch=n+oct;
+      const x=ox+wi*WW;
+      const isSel=npState.pitch===pitch;
+      const fill=isSel?'#1eb8a0':isSelOct?'rgba(232,160,32,.18)':'white';
+      const stroke=isSel?'#1eb8a0':isSelOct?'#e8a020':'#ccc';
+      ws+=`<rect x="${x}" y="0" width="${WW-1}" height="${WH}" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="${isSel?1.5:.7}" style="cursor:pointer" onclick="npSetNoteOct('${n}','${oct}')"/>`;
+      if(isSel)ws+=`<text x="${x+WW/2-.5}" y="${WH-5}" font-size="6" text-anchor="middle" fill="white" font-family="monospace" font-weight="bold">${n}</text>`;
+    });
+    BK.forEach(({wi,n})=>{
+      const pitch=n+oct;
+      const x=ox+(wi+1)*WW-BW/2-1;
+      const isSel=npState.pitch===pitch;
+      const fill=isSel?'#1eb8a0':isSelOct?'#6040a0':'#1a1815';
+      bs+=`<rect x="${x}" y="0" width="${BW}" height="${BH}" rx="2" fill="${fill}" stroke="none" style="cursor:pointer" onclick="npSetNoteOct('${n}','${oct}')"/>`;
+    });
+    // C音の下にラベル
+    const lx=ox+WW/2-.5;
+    const isSelLbl=oct===curOct;
+    lbls+=`<text x="${lx}" y="${WH+11}" font-size="7" text-anchor="start" fill="${isSelLbl?'#e8a020':'#555'}" font-family="monospace" font-weight="${isSelLbl?'bold':'normal'}">${CLBL[oct]||'Oct'+oct}</text>`;
+  });
+
+  return`<svg width="${svgW}" height="${WH+15}" style="display:block;overflow:visible">${ws}${bs}${lbls}</svg>`;
+}
+
 function renderNotePicker(){
   const npk=document.getElementById('npk');
+  const selNote=npState.pitch.replace(/\d/,'');
+  const selOct=parseInt(npState.pitch.slice(-1));
   npk.innerHTML=`
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
   <span style="font-size:11px;font-weight:700;color:var(--teal);font-family:var(--mono)">音符を追加</span>
   <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px" onclick="closeNotePicker()">✕</button>
 </div>
-<div class="npk-row">
-  <span class="npk-lbl">オクターブ</span>
-  <div style="display:flex;gap:3px">${OCTAVES.map(o=>`<button class="npk-note${npState.pitch.slice(-1)==String(o)?' sel':''}" onclick="npSetOct(${o})">${o}</button>`).join('')}</div>
+
+<!-- ピアノ鍵盤 -->
+<div style="background:#f8f6f2;border-radius:8px;padding:10px 8px 6px;margin-bottom:12px;overflow-x:auto">
+  ${_pianoSVG()}
+  <div style="margin-top:3px;font-size:9px;color:#999;font-family:monospace;text-align:right">← タップして音を選択</div>
 </div>
-<div class="npk-row">
+
+<!-- 音名・オクターブ（鍵盤と連動） -->
+<div class="npk-row" style="margin-bottom:6px">
   <span class="npk-lbl">音名</span>
-  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES.map(n=>{const full=n+npState.pitch.slice(-1);const isSel=npState.pitch===full;return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}</div>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES.map(n=>{const isSel=selNote===n;return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}</div>
 </div>
+<div class="npk-row" style="margin-bottom:10px">
+  <span class="npk-lbl">オクターブ</span>
+  <div style="display:flex;gap:3px">${OCTAVES.map(o=>{const lbl={3:'低',4:'中',5:'高'};return`<button class="npk-note${selOct===o?' sel':''}" onclick="npSetOct(${o})" style="min-width:38px">${o}<span style="font-size:8px;opacity:.7;margin-left:2px">${lbl[o]||''}</span></button>`;}).join('')}</div>
+</div>
+
+<!-- 音価 -->
 <div class="npk-row"><span class="npk-lbl">音価</span><div class="dur-row">${DURS.map(d=>`<button class="dur-btn${npState.dur===d.v?' sel':''}" onclick="npSetDur('${d.v}')">${d.l}</button>`).join('')}</div></div>
+
+<!-- 確定バー -->
 <div style="margin-top:10px;display:flex;gap:6px;align-items:center">
   <div style="flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--teal)">${npState.pitch} / ${DURS.find(d=>d.v===npState.dur)?.l}</div>
   <button class="btn" style="background:var(--teal);color:var(--bg);padding:7px 14px" onclick="npPreview()">▶</button>
@@ -235,6 +291,7 @@ function renderNotePicker(){
 
 function npSetOct(o){const root=npState.pitch.replace(/\d/,'');npState.pitch=root+o;renderNotePicker();}
 function npSetNote(n){const oct=npState.pitch.slice(-1);npState.pitch=n+oct;renderNotePicker();}
+function npSetNoteOct(n,o){npState.pitch=n+o;playNote(npState.pitch);renderNotePicker();}
 function npSetDur(d){npState.dur=d;renderNotePicker();}
 function npPreview(){playNote(npState.pitch);}
 function npConfirm(){if(notePickerCb)notePickerCb(npState.pitch,npState.dur);closeNotePicker();}
