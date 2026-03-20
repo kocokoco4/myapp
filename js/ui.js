@@ -82,5 +82,6 @@ function renderTab(){
   else if(curTab==='chords')el.innerHTML=renderChords(s);
   else if(curTab==='accomp')el.innerHTML=renderAccomp(s);
   else if(curTab==='score')el.innerHTML=renderScore(s);
+  else if(curTab==='dict')el.innerHTML=renderDict();
   else if(curTab==='ai'){el.innerHTML=renderAI(s);const m=document.getElementById('chatMsgs');if(m)m.scrollTop=m.scrollHeight;}
 }

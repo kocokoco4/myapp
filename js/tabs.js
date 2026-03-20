@@ -468,6 +468,114 @@ ${!hasKey?`<div style="background:rgba(232,160,32,.08);border:1px solid rgba(232
   <div class="chat-row"><input id="chatIn" class="chat-in" placeholder="コード、アレンジ、メロディなど..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"><button class="btn btn-a" onclick="sendAI()">送信</button></div>
 </div></div>`;}
 
+/* ── DICT（コード進行辞典） ── */
+let _dictFilter='全て';
+let _dictPreviewTimers=[];
+
+const _DICT_GENRES=['全て','J-POP','ポップス','ロック','ジャズ','ブルース','クラシック','ソウル/R&B','映画音楽'];
+const _MOOD_COLOR={'明るい':'#50c878','哀愁':'#3b82f6','切ない':'#9060e8','感動':'#e8a020',
+  'ダーク':'#e05050','おしゃれ':'#1eb8a0','渋い':'#8a8070','壮大':'#7c3aed',
+  '懐かしい':'#f0b840','グルーヴ':'#e05050','洗練':'#1eb8a0','叙情的':'#9060e8',
+  '普遍的':'#50c878','力強い':'#e8a020','神秘':'#7c3aed','スウィング':'#f0b840','史詩的':'#7c3aed'};
+
+function setDictFilter(g){_dictFilter=g;renderTab();}
+
+function dictPreview(idx){
+  _dictPreviewTimers.forEach(t=>clearTimeout(t));_dictPreviewTimers=[];
+  const entry=CHORD_DICT[idx];if(!entry)return;
+  const bpm=cur()?.tempo||120;const measMs=(4*60000)/bpm;
+  entry.chords.forEach((c,i)=>{
+    _dictPreviewTimers.push(setTimeout(()=>{
+      const el=document.getElementById(`dcard_${idx}`);
+      playChord(c,el);
+    },i*measMs));
+  });
+}
+
+function openDictApply(idx){
+  const entry=CHORD_DICT[idx];if(!entry)return;
+  const s=cur();if(!s)return;
+  // セクション選択パネルをカード内に表示/非表示
+  const panel=document.getElementById(`dapply_${idx}`);
+  if(panel){panel.style.display=panel.style.display==='none'?'block':'none';return;}
+}
+
+function applyDictToSection(si,chords){
+  upd(s=>{
+    const sec=s.sections[si];
+    const newMeas=chords.map((c,i)=>({
+      id:sec.measures[i]?.id||gid(),
+      chord:c,
+      melNotes:sec.measures[i]?.melNotes||[]
+    }));
+    // コード数が小節数を超える場合は小節を追加
+    if(chords.length>sec.measures.length){
+      for(let i=sec.measures.length;i<chords.length;i++){
+        newMeas[i]={id:gid(),chord:chords[i],melNotes:[]};
+      }
+    }
+    s.sections[si].measures=newMeas;
+  });
+  document.querySelectorAll('.dapply-panel').forEach(p=>p.style.display='none');
+  toast(`✓「${cur()?.sections[si]?.name}」に適用しました`);
+  // コードタブに移動して確認
+  switchTab('chords');
+}
+
+function renderDict(){
+  const s=cur();
+  const filtered=_dictFilter==='全て'?CHORD_DICT:CHORD_DICT.filter(e=>e.genre.includes(_dictFilter));
+  return`
+<div style="margin-bottom:14px">
+  <div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:4px">📖 コード進行辞典</div>
+  <div style="font-size:11px;color:var(--text3);line-height:1.7">世界の名曲・定番進行を学んで自分の曲に活用しよう。▶ で試聴、「使う」でコード進行タブに即反映。</div>
+</div>
+
+<!-- ジャンルフィルター -->
+<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px">
+  ${_DICT_GENRES.map(g=>`<button class="btn" style="font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid ${_dictFilter===g?'var(--amber)':'var(--border2)'};background:${_dictFilter===g?'rgba(232,160,32,.15)':'transparent'};color:${_dictFilter===g?'var(--amber)':'var(--text3)'}" onclick="setDictFilter('${g}')">${g}</button>`).join('')}
+</div>
+
+<!-- カード一覧 -->
+<div style="display:flex;flex-direction:column;gap:10px">
+${filtered.map((entry,idx)=>{
+  const realIdx=CHORD_DICT.indexOf(entry);
+  const moodColor=_MOOD_COLOR[entry.mood.split('・')[0]]||'var(--text2)';
+  return`
+<div id="dcard_${realIdx}" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:14px;transition:border-color .15s">
+  <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:13px;margin-bottom:3px">${esc(entry.name)}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(232,160,32,.12);color:var(--amber);font-family:var(--mono);font-weight:700">${esc(entry.genre)}</span>
+        <span style="font-size:9px;padding:2px 7px;border-radius:10px;background:${moodColor}18;color:${moodColor};font-family:var(--mono)">${esc(entry.mood)}</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <button class="btn btn-g" style="font-size:10px;padding:4px 9px" onclick="dictPreview(${realIdx})">▶ 試聴</button>
+      ${s?`<button class="btn btn-a" style="font-size:10px;padding:4px 9px" onclick="openDictApply(${realIdx})">使う ▾</button>`:''}
+    </div>
+  </div>
+  <!-- コードピル -->
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+    ${entry.chords.map((c,i)=>`<span style="background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;font-family:var(--mono);color:var(--text)">${i+1}.<span style="color:var(--amber);margin-left:3px">${c}</span></span>`).join('')}
+  </div>
+  <!-- 説明 -->
+  <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:6px">${esc(entry.desc)}</div>
+  <!-- 有名曲 -->
+  <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">🎵 ${entry.ex.map(e=>esc(e)).join(' · ')}</div>
+  <!-- セクション適用パネル -->
+  ${s?`<div id="dapply_${realIdx}" class="dapply-panel" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">
+    <div style="font-size:10px;color:var(--text2);margin-bottom:6px;font-weight:700">どのセクションに適用する？</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap">
+      ${s.sections.map((sec,si)=>`<button class="btn btn-g" style="font-size:10px;padding:4px 10px;border-color:var(--teal);color:var(--teal)" onclick="applyDictToSection(${si},${JSON.stringify(entry.chords)})">${esc(sec.name)}</button>`).join('')}
+    </div>
+  </div>`:''}
+</div>`;
+}).join('')}
+</div>`;
+}
+
 async function sendAI(text){
   const s=cur();if(!s)return;
   if(!getGeminiKey()){openSettings();return;}
