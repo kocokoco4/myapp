@@ -71,7 +71,7 @@ function renderBNav(){
   document.querySelectorAll('.bnb').forEach(b=>b.classList.toggle('active',b.dataset.tab===curTab));
 }
 
-function switchTab(t){curTab=t;stopSectionPlay();closeNotePicker();renderTabsBar();renderBNav();renderTab();}
+function switchTab(t){curTab=t;stopSectionPlay();stopMetronome();closeNotePicker();renderTabsBar();renderBNav();renderTab();}
 
 function renderTab(){
   const s=cur();if(!s)return;

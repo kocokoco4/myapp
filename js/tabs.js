@@ -1,5 +1,85 @@
 // ─── タブレンダラー・インタラクション ───
 
+/* ── メトロノーム ── */
+let _metroTimer=null,_metroBeat=0;
+
+function toggleMetronome(){
+  const btn=document.getElementById('metroBtn');
+  if(_metroTimer){
+    clearInterval(_metroTimer);_metroTimer=null;_metroBeat=0;
+    if(btn){btn.textContent='♩ メトロノーム';btn.style.background='';btn.style.color='';}
+    return;
+  }
+  const s=cur();if(!s)return;
+  const bpm=s.tempo||120;
+  const ctx=getAudioCtx();
+  function tick(){
+    const now=ctx.currentTime;
+    const osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.frequency.value=_metroBeat%4===0?1400:900;
+    gain.gain.setValueAtTime(0.25,now);
+    gain.gain.exponentialRampToValueAtTime(0.001,now+0.04);
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.start(now);osc.stop(now+0.04);
+    _metroBeat++;
+  }
+  tick();
+  _metroTimer=setInterval(tick,60000/bpm);
+  if(btn){btn.textContent='■ 停止';btn.style.background='rgba(30,184,160,.15)';btn.style.color='var(--teal)';}
+}
+
+function stopMetronome(){
+  if(_metroTimer){clearInterval(_metroTimer);_metroTimer=null;_metroBeat=0;}
+  const btn=document.getElementById('metroBtn');
+  if(btn){btn.textContent='♩ メトロノーム';btn.style.background='';btn.style.color='';}
+}
+
+/* ── 転調・複製 ── */
+const _SM={'C':0,'C#':1,'D':2,'D#':3,'E':4,'F':5,'F#':6,'G':7,'G#':8,'A':9,'A#':10,'B':11,'Db':1,'Eb':3,'Gb':6,'Ab':8,'Bb':10};
+
+function _transposeChord(chord,st){
+  if(!chord)return chord;
+  const m=chord.match(/^([A-G][#b]?)(.*)$/);if(!m)return chord;
+  const ri=_SM[m[1]];if(ri===undefined)return chord;
+  const newRoot=KEYS[((ri+st)%12+12)%12];
+  const sfx=m[2];
+  const sl=sfx.lastIndexOf('/');
+  if(sl>=0){
+    const bn=sfx.slice(sl+1);const bi=_SM[bn];
+    if(bi!==undefined)return newRoot+sfx.slice(0,sl+1)+KEYS[((bi+st)%12+12)%12];
+  }
+  return newRoot+sfx;
+}
+
+function _transposePitch(pitch,st){
+  if(!pitch||pitch==='R')return pitch;
+  const m=pitch.match(/^([A-G][#b]?)(\d)$/);if(!m)return pitch;
+  const ni=_SM[m[1]];if(ni===undefined)return pitch;
+  const total=ni+parseInt(m[2])*12+st;
+  const newOct=Math.floor(total/12);const newNi=((total%12)+12)%12;
+  return KEYS[newNi]+newOct;
+}
+
+function transposeSection(si,st){
+  upd(s=>{
+    s.sections[si].measures=s.sections[si].measures.map(m=>({
+      ...m,
+      chord:_transposeChord(m.chord,st),
+      melNotes:(m.melNotes||[]).map(n=>({...n,pitch:_transposePitch(n.pitch,st)}))
+    }));
+  });
+}
+
+function dupSection(si){
+  upd(s=>{
+    const orig=s.sections[si];
+    const copy=JSON.parse(JSON.stringify(orig));
+    copy.id=gid();copy.name=orig.name+' (コピー)';
+    copy.measures=copy.measures.map(m=>({...m,id:gid()}));
+    s.sections.splice(si+1,0,copy);
+  });
+}
+
 /* ── セクション再生 ── */
 let _playTimers=[],_playingSec=null;
 
@@ -49,9 +129,11 @@ function playChordSection(si){
 
 /* ── LYRICS ── */
 function renderLyrics(s){return`
-<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-  <div><label class="flbl">KEY</label><select class="inp" onchange="upd(s=>s.key=this.value)">${KEYS.map(k=>`<option${k===s.key?' selected':''}>${k}</option>`).join('')}</select></div>
-  <div><label class="flbl">BPM</label><input type="number" class="inp" style="width:72px" value="${s.tempo}" min="40" max="300" onchange="upd(s=>s.tempo=parseInt(this.value)||120)"></div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 12px">
+  <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">Key: <strong style="color:var(--text2)">${s.key}</strong></span>
+  <span style="color:var(--border2)">|</span>
+  <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">BPM: <strong style="color:var(--text2)">${s.tempo}</strong></span>
+  <span style="font-size:10px;color:var(--text3);margin-left:4px">← メロディタブで変更</span>
 </div>
 <div style="margin-bottom:12px">
   <label class="flbl">LYRICS</label>
@@ -69,12 +151,10 @@ function renderLyrics(s){return`
 /* ── MELODY ── */
 function renderMelody(s){
   return`
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-  <span style="font-family:var(--disp);font-size:15px;font-weight:700">メロディ</span>
-  <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">音符をタップして追加 · 鳴らして確認</span>
-</div>
-<div style="font-size:11px;color:var(--text2);background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:14px;border:1px solid var(--border);line-height:1.8">
-  各セクション・各小節に音符を追加できます。<br>コードタブでコード進行を入力しておくと、コード名も一緒に表示されます。
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
+  <div><label class="flbl">KEY</label><select class="inp" onchange="upd(s=>s.key=this.value)">${KEYS.map(k=>`<option${k===s.key?' selected':''}>${k}</option>`).join('')}</select></div>
+  <div><label class="flbl">BPM</label><input type="number" class="inp" style="width:72px" value="${s.tempo}" min="40" max="300" onchange="upd(s=>s.tempo=parseInt(this.value)||120)"></div>
+  <div style="padding-bottom:2px"><button id="metroBtn" class="btn btn-g" style="font-size:11px;padding:6px 12px" onclick="toggleMetronome()">♩ メトロノーム</button></div>
 </div>
 ${s.sections.map((sec,si)=>`
 <div class="mel-sec">
@@ -101,9 +181,12 @@ ${s.sections.map((sec,si)=>`
       </div>
     </div>`).join('')}
   </div>
-  <div style="display:flex;gap:6px">
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
     <button class="btn btn-g" style="font-size:10px;padding:4px 10px" onclick="addMelMeasure(${si})">+ 小節</button>
     ${sec.measures.length>1?`<button class="btn btn-g" style="font-size:10px;padding:4px 10px" onclick="delMelMeasure(${si})">- 小節</button>`:''}
+    <button class="btn btn-g" style="font-size:10px;padding:4px 10px" onclick="dupSection(${si})">複製</button>
+    <button class="btn btn-g" style="font-size:10px;padding:4px 10px" onclick="transposeSection(${si},1)">半音↑</button>
+    <button class="btn btn-g" style="font-size:10px;padding:4px 10px" onclick="transposeSection(${si},-1)">半音↓</button>
   </div>
 </div>`).join('')}`;
 }
@@ -176,6 +259,9 @@ ${s.sections.map((sec,si)=>`
     <input class="sni" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
     <button id="chord-play-${si}" class="sec-play-btn btn btn-g" style="flex-shrink:0;font-size:10px;padding:3px 9px;white-space:nowrap" onclick="playChordSection(${si})">▶ 再生</button>
     <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="addMeasure(${si})">+小節</button>
+    <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="dupSection(${si})">複製</button>
+    <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="transposeSection(${si},1)">半音↑</button>
+    <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="transposeSection(${si},-1)">半音↓</button>
     ${s.sections.length>1?`<button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px" onclick="delSection(${si})">×</button>`:''}
   </div>
   <div class="cg" id="cg_${si}">
