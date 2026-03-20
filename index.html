@@ -29,6 +29,7 @@
         <button class="spill" id="stBtn" onclick="toggleSDrop()"></button>
         <div class="sdrop" id="stDrop"></div>
       </div>
+      <button id="settingsBtn" class="btn btn-g" style="padding:5px 8px;font-size:14px;flex-shrink:0" onclick="openSettings()" title="設定">⚙</button>
     </div>
     <div class="tabs-bar" id="tabsBar"></div>
     <div class="tab-c" id="tabC"></div>
@@ -36,6 +37,8 @@
       <button class="bnb" data-tab="lyrics" onclick="switchTab('lyrics')"><span class="bnb-ic">✏️</span>歌詞</button>
       <button class="bnb" data-tab="melody" onclick="switchTab('melody')"><span class="bnb-ic">🎵</span>メロ</button>
       <button class="bnb" data-tab="chords" onclick="switchTab('chords')"><span class="bnb-ic">🎸</span>コード</button>
+      <button class="bnb" data-tab="accomp" onclick="switchTab('accomp')"><span class="bnb-ic">🎼</span>伴奏</button>
+      <button class="bnb" data-tab="score" onclick="switchTab('score')"><span class="bnb-ic">📋</span>譜面</button>
       <button class="bnb" data-tab="dict" onclick="switchTab('dict')"><span class="bnb-ic">📖</span>辞典</button>
       <button class="bnb" data-tab="ai" onclick="switchTab('ai')"><span class="bnb-ic">✦</span>AI</button>
     </div>
