@@ -1,5 +1,52 @@
 // ─── タブレンダラー・インタラクション ───
 
+/* ── セクション再生 ── */
+let _playTimers=[],_playingSec=null;
+
+function stopSectionPlay(){
+  _playTimers.forEach(t=>clearTimeout(t));
+  _playTimers=[];_playingSec=null;
+  document.querySelectorAll('.sec-play-btn').forEach(b=>{b.textContent='▶ 再生';b.style.color='';b.style.borderColor='';});
+}
+
+function playMelSection(si){
+  if(_playingSec!==null){stopSectionPlay();return;}
+  const s=cur();if(!s)return;
+  const sec=s.sections[si];const bpm=s.tempo||120;const beatMs=60000/bpm;
+  _playingSec=si;
+  const btn=document.getElementById(`mel-play-${si}`);
+  if(btn){btn.textContent='■ 停止';btn.style.color='var(--coral)';btn.style.borderColor='var(--coral)';}
+  let maxT=0;
+  sec.measures.forEach((meas,mi)=>{
+    const measStart=mi*4*beatMs;
+    (meas.melNotes||[]).forEach(n=>{
+      if(!n.pitch||n.pitch==='R')return;
+      const t=measStart+(n.startBeat||0)*beatMs;
+      _playTimers.push(setTimeout(()=>playNote(n.pitch),t));
+      maxT=Math.max(maxT,t+beatMs);
+    });
+  });
+  if(maxT===0)maxT=sec.measures.length*4*beatMs;
+  _playTimers.push(setTimeout(stopSectionPlay,maxT+300));
+}
+
+function playChordSection(si){
+  if(_playingSec!==null){stopSectionPlay();return;}
+  const s=cur();if(!s)return;
+  const sec=s.sections[si];const bpm=s.tempo||120;const measMs=(4*60000)/bpm;
+  _playingSec=si;
+  const btn=document.getElementById(`chord-play-${si}`);
+  if(btn){btn.textContent='■ 停止';btn.style.color='var(--coral)';btn.style.borderColor='var(--coral)';}
+  sec.measures.forEach((meas,mi)=>{
+    if(!meas.chord)return;
+    _playTimers.push(setTimeout(()=>{
+      const el=document.getElementById(`cc_${si}_${mi}`);
+      playChord(meas.chord,el);
+    },mi*measMs));
+  });
+  _playTimers.push(setTimeout(stopSectionPlay,sec.measures.length*measMs+300));
+}
+
 /* ── LYRICS ── */
 function renderLyrics(s){return`
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
@@ -31,7 +78,10 @@ function renderMelody(s){
 </div>
 ${s.sections.map((sec,si)=>`
 <div class="mel-sec">
-  <input class="mel-sec-name" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <input class="mel-sec-name" style="margin-bottom:0" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
+    <button id="mel-play-${si}" class="sec-play-btn btn btn-g" style="flex-shrink:0;font-size:10px;padding:4px 10px;white-space:nowrap" onclick="playMelSection(${si})">▶ 再生</button>
+  </div>
   <div style="margin-bottom:12px">
     <div class="staff-block">
       ${melodyStaffSVG(sec.measures)}
@@ -124,6 +174,7 @@ ${s.sections.map((sec,si)=>`
 <div class="sec-wr">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <input class="sni" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
+    <button id="chord-play-${si}" class="sec-play-btn btn btn-g" style="flex-shrink:0;font-size:10px;padding:3px 9px;white-space:nowrap" onclick="playChordSection(${si})">▶ 再生</button>
     <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="addMeasure(${si})">+小節</button>
     ${s.sections.length>1?`<button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px" onclick="delSection(${si})">×</button>`:''}
   </div>
