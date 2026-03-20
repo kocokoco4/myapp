@@ -153,15 +153,18 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   #settingsBtn{display:none}
 }
 /* ── ライトモード追加スタイル ── */
-[data-theme="light"] body::before{opacity:.08}
+[data-theme="light"] body::before{opacity:.06}
 [data-theme="light"] .staff-block{background:#fffcf7}
-[data-theme="light"] .btn-g{background:rgba(0,0,0,.05);border-color:var(--border2);color:var(--text2)}
-[data-theme="light"] .btn-g:hover{background:rgba(0,0,0,.09)}
-[data-theme="light"] .inp{background:var(--bg4);border-color:var(--border2);color:var(--text)}
-[data-theme="light"] .txa{background:var(--bg4);border-color:var(--border2);color:var(--text)}
-[data-theme="light"] .cpk{background:var(--bg2);border-color:var(--border)}
-[data-theme="light"] .npk{background:var(--bg2);border-color:var(--border)}
-[data-theme="light"] .sc-wr{background:var(--bg2)}
-[data-theme="light"] .chat-in{background:var(--bg4);border-color:var(--border2);color:var(--text)}
+[data-theme="light"] .staff-sec-lbl{background:#ede8ff;color:#6030c0}
+[data-theme="light"] .btn-g{background:rgba(0,0,0,.04);border-color:var(--border2);color:var(--text2)}
+[data-theme="light"] .btn-g:hover{background:rgba(0,0,0,.08);color:var(--amber)}
+[data-theme="light"] .sdrop{box-shadow:0 8px 24px rgba(0,0,0,.18)}
+[data-theme="light"] .cpk{box-shadow:0 8px 24px rgba(0,0,0,.18)}
 [data-theme="light"] .mb-a{background:var(--bg3);border-color:var(--border2);color:var(--text)}
+[data-theme="light"] .chat-in{background:#fff;border-color:var(--border2);color:var(--text)}
+[data-theme="light"] .sc-wr{background:#fff}
+[data-theme="light"] .qb{background:#fff;color:var(--text2)}
+[data-theme="light"] .cpb{background:#fff;color:var(--text2)}
 [data-theme="light"] #themeBtn{color:var(--amber)}
+/* ライトモード：ピアノ鍵盤コンテナ */
+[data-theme="light"] .npk-piano-bg{background:#e8e3d8}

@@ -266,6 +266,7 @@ function openNotePicker(e,si,mi){
 function _pianoSVG(){
   const WW=11,WH=44,BW=7,BH=27;
   const curOct=parseInt(npState.pitch.slice(-1));
+  const isLight=document.documentElement.getAttribute('data-theme')==='light';
   // 白鍵：C D E F G A B の順
   const WN=['C','D','E','F','G','A','B'];
   // 黒鍵：白鍵インデックスと音名
@@ -283,22 +284,23 @@ function _pianoSVG(){
       const pitch=n+oct;
       const x=ox+wi*WW;
       const isSel=npState.pitch===pitch;
-      const fill=isSel?'#1eb8a0':isSelOct?'rgba(232,160,32,.18)':'white';
-      const stroke=isSel?'#1eb8a0':isSelOct?'#e8a020':'#ccc';
-      ws+=`<rect x="${x}" y="0" width="${WW-1}" height="${WH}" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="${isSel?1.5:.7}" style="cursor:pointer" onclick="npSetNoteOct('${n}','${oct}')"/>`;
+      const wFill=isSel?'#1eb8a0':isSelOct?'rgba(232,160,32,.18)':(isLight?'#f8f5ef':'white');
+      const wStroke=isSel?'#1eb8a0':isSelOct?'#e8a020':(isLight?'#b0a898':'#ccc');
+      ws+=`<rect x="${x}" y="0" width="${WW-1}" height="${WH}" rx="2" fill="${wFill}" stroke="${wStroke}" stroke-width="${isSel?1.5:.7}" style="cursor:pointer" onclick="npSetNoteOct('${n}','${oct}')"/>`;
       if(isSel)ws+=`<text x="${x+WW/2-.5}" y="${WH-5}" font-size="6" text-anchor="middle" fill="white" font-family="monospace" font-weight="bold">${n}</text>`;
     });
     BK.forEach(({wi,n})=>{
       const pitch=n+oct;
       const x=ox+(wi+1)*WW-BW/2-1;
       const isSel=npState.pitch===pitch;
-      const fill=isSel?'#1eb8a0':isSelOct?'#6040a0':'#1a1815';
-      bs+=`<rect x="${x}" y="0" width="${BW}" height="${BH}" rx="2" fill="${fill}" stroke="none" style="cursor:pointer" onclick="npSetNoteOct('${n}','${oct}')"/>`;
+      const bFill=isSel?'#1eb8a0':isSelOct?'#6040a0':(isLight?'#2a2318':'#1a1815');
+      bs+=`<rect x="${x}" y="0" width="${BW}" height="${BH}" rx="2" fill="${bFill}" stroke="none" style="cursor:pointer" onclick="npSetNoteOct('${n}','${oct}')"/>`;
     });
     // C音の下にラベル
     const lx=ox+WW/2-.5;
     const isSelLbl=oct===curOct;
-    lbls+=`<text x="${lx}" y="${WH+11}" font-size="7" text-anchor="start" fill="${isSelLbl?'#e8a020':'#555'}" font-family="monospace" font-weight="${isSelLbl?'bold':'normal'}">${CLBL[oct]||'Oct'+oct}</text>`;
+    const lblColor=isSelLbl?'#e8a020':(isLight?'#8a7c6e':'#888');
+    lbls+=`<text x="${lx}" y="${WH+11}" font-size="7" text-anchor="start" fill="${lblColor}" font-family="monospace" font-weight="${isSelLbl?'bold':'normal'}">${CLBL[oct]||'Oct'+oct}</text>`;
   });
 
   return`<svg width="${svgW}" height="${WH+15}" style="display:block;overflow:visible">${ws}${bs}${lbls}</svg>`;
@@ -315,7 +317,7 @@ function renderNotePicker(){
 </div>
 
 <!-- ピアノ鍵盤 -->
-<div style="background:#f8f6f2;border-radius:8px;padding:10px 8px 6px;margin-bottom:12px;overflow-x:auto">
+<div class="npk-piano-bg" style="background:#f8f6f2;border-radius:8px;padding:10px 8px 6px;margin-bottom:12px;overflow-x:auto">
   ${_pianoSVG()}
   <div style="margin-top:3px;font-size:9px;color:#999;font-family:monospace;text-align:right">← タップして音を選択</div>
 </div>
@@ -373,14 +375,16 @@ function renderChords(s){return`
 <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">▶ タップで音が鳴ります</div>
 ${s.sections.map((sec,si)=>`
 <div class="sec-wr">
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
     <input class="sni" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
-    <button id="chord-play-${si}" class="sec-play-btn btn btn-g" style="flex-shrink:0;font-size:10px;padding:3px 9px;white-space:nowrap" onclick="playChordSection(${si})">▶ 再生</button>
-    <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="addMeasure(${si})">+小節</button>
-    <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="dupSection(${si})">複製</button>
-    <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="transposeSection(${si},1)">半音↑</button>
-    <button class="btn btn-g" style="padding:3px 8px;font-size:10px" onclick="transposeSection(${si},-1)">半音↓</button>
-    ${s.sections.length>1?`<button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px" onclick="delSection(${si})">×</button>`:''}
+    ${s.sections.length>1?`<button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0" onclick="delSection(${si})">×</button>`:''}
+  </div>
+  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+    <button id="chord-play-${si}" class="sec-play-btn btn btn-g" style="font-size:10px;padding:4px 10px;white-space:nowrap" onclick="playChordSection(${si})">▶ 再生</button>
+    <button class="btn btn-g" style="padding:4px 9px;font-size:10px" onclick="addMeasure(${si})">＋小節</button>
+    <button class="btn btn-g" style="padding:4px 9px;font-size:10px" onclick="dupSection(${si})">複製</button>
+    <button class="btn btn-g" style="padding:4px 9px;font-size:10px" onclick="transposeSection(${si},1)">半音↑</button>
+    <button class="btn btn-g" style="padding:4px 9px;font-size:10px" onclick="transposeSection(${si},-1)">半音↓</button>
   </div>
   <div class="cg" id="cg_${si}">
     ${sec.measures.map((m,mi)=>`
@@ -694,7 +698,7 @@ function _basicsVisual(idx){
         ${[['Ⅰ','C',G],['Ⅱm','Dm','#aaa'],['Ⅲm','Em','#aaa'],['Ⅳ','F',G],['Ⅴ','G',C],['Ⅵm','Am',P],['Ⅶ°','B°',R]].map(([r,c,col])=>`
           <div style="flex:1;text-align:center">
             <div style="font-size:9px;color:${col};font-family:monospace;margin-bottom:2px;font-weight:700">${r}</div>
-            <div style="font-size:10px;font-weight:700;color:#ddd;font-family:monospace;background:var(--bg4);border:1px solid ${col}55;border-radius:5px;padding:4px 1px">${c}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text);font-family:monospace;background:var(--bg4);border:1px solid ${col}55;border-radius:5px;padding:4px 1px">${c}</div>
           </div>`).join('')}
       </div>
       <div style="font-size:9px;color:#888;margin-top:6px;font-family:monospace">Cメジャーの7つのダイアトニックコード</div>
