@@ -593,15 +593,15 @@ function _basicsVisual(idx){
   const stLines=(x1,x2)=>[8,16,24,32,40].map(y=>`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#555" stroke-width="0.7"/>`).join('');
   const v=[
     /* 0: 五線譜 */
-    `<svg width="100%" height="54" viewBox="0 0 240 54" style="max-width:240px">
-      ${[6,14,22,30,38].map((y,i)=>`<line x1="28" y1="${y}" x2="200" y2="${y}" stroke="#666" stroke-width="0.8"/>
+    `<svg width="100%" height="72" viewBox="0 0 240 72" style="max-width:240px">
+      ${[8,16,24,32,40].map((y,i)=>`<line x1="28" y1="${y}" x2="200" y2="${y}" stroke="#666" stroke-width="0.8"/>
         <text x="2" y="${y+4}" font-size="8" fill="#777" font-family="monospace">第${5-i}線</text>`).join('')}
-      <ellipse cx="120" cy="22" rx="7" ry="4.5" fill="${T}" transform="rotate(-12,120,22)"/>
-      <line x1="127" y1="21" x2="127" y2="2" stroke="${T}" stroke-width="1.3"/>
-      <line x1="88" y1="46" x2="88" y2="54" stroke="${C}" stroke-width="0.8"/>
-      <line x1="80" y1="46" x2="96" y2="46" stroke="${C}" stroke-width="0.8"/>
-      <text x="84" y="54" font-size="8" fill="${C}" font-family="monospace">加線</text>
-      <ellipse cx="88" cy="46" rx="6" ry="4" fill="${C}" transform="rotate(-12,88,46)"/>
+      <ellipse cx="130" cy="24" rx="7" ry="4.5" fill="${T}" transform="rotate(-12,130,24)"/>
+      <line x1="137" y1="23" x2="137" y2="4" stroke="${T}" stroke-width="1.3"/>
+      <text x="145" y="22" font-size="9" fill="${T}" font-family="monospace">← 第3線</text>
+      <line x1="80" y1="52" x2="96" y2="52" stroke="${C}" stroke-width="1"/>
+      <ellipse cx="88" cy="56" rx="7" ry="4.5" fill="${C}" transform="rotate(-12,88,56)"/>
+      <text x="68" y="70" font-size="8" fill="${C}" font-family="monospace">← 加線（五線の外）</text>
     </svg>`,
     /* 1: ト音記号/ヘ音記号 */
     `<div style="display:flex;gap:24px;align-items:center">

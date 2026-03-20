@@ -22,8 +22,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .tbtn{padding:10px 13px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:11px;white-space:nowrap;flex-shrink:0;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;font-family:var(--font)}
 .tbtn.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
 .tab-c{flex:1;overflow-y:auto;padding:16px}
-#bnav{display:none;height:var(--nav);background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;grid-template-columns:repeat(7,1fr);overflow-x:auto}
-.bnb{background:none;border:none;color:var(--text3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:8px;font-family:var(--font);transition:color .15s;padding:4px 1px;min-width:46px}
+#bnav{display:none;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:env(safe-area-inset-bottom,0px)}
+#bnav::-webkit-scrollbar{height:0}
+.bnb{background:none;border:none;color:var(--text3);cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:8px;font-family:var(--font);transition:color .15s;padding:8px 0 6px;min-width:52px;flex-shrink:0}
 .bnb.active{color:var(--amber)}
 .bnb-ic{font-size:18px;line-height:1}
 .sb-hd{padding:18px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
@@ -135,8 +136,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   #sidebar.open{transform:translateX(0)}
   #sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:799}
   #sb-overlay.open{display:block}
-  #bnav{display:grid!important}
-  .tab-c{padding:12px;padding-bottom:calc(var(--nav)+16px)}
+  #bnav{display:flex!important}
+  .tab-c{padding:12px;padding-bottom:calc(var(--nav) + env(safe-area-inset-bottom,0px) + 16px)}
   .topbar{padding:9px 12px}
   .tabs-bar{display:none}
   #main{height:100vh}
