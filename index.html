@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>曲帳</title>
+<script>(function(){var t=localStorage.getItem('kch_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -29,6 +30,7 @@
         <button class="spill" id="stBtn" onclick="toggleSDrop()"></button>
         <div class="sdrop" id="stDrop"></div>
       </div>
+      <button id="themeBtn" class="btn btn-g" style="padding:5px 8px;font-size:15px;flex-shrink:0" onclick="toggleTheme()" title="テーマ切替">🌙</button>
       <button id="settingsBtn" class="btn btn-g" style="padding:5px 8px;font-size:14px;flex-shrink:0" onclick="openSettings()" title="設定">⚙</button>
     </div>
     <div class="tabs-bar" id="tabsBar"></div>

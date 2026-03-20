@@ -7,6 +7,11 @@
   --font:'Noto Sans JP',sans-serif;--mono:'Space Mono',monospace;--disp:'Syne',sans-serif;
   --sb:230px;--nav:62px;--r:10px;--rl:16px;
 }
+[data-theme="light"]{
+  --bg:#faf7f2;--bg2:#f2ede4;--bg3:#e9e4da;--bg4:#dfd9ce;
+  --border:#cec8bc;--border2:#bdb7ab;
+  --text:#1c1916;--text2:#5a544a;--text3:#968e82;
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6}
@@ -147,3 +152,16 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   #sb-overlay{display:none!important}
   #settingsBtn{display:none}
 }
+/* ── ライトモード追加スタイル ── */
+[data-theme="light"] body::before{opacity:.08}
+[data-theme="light"] .staff-block{background:#fffcf7}
+[data-theme="light"] .btn-g{background:rgba(0,0,0,.05);border-color:var(--border2);color:var(--text2)}
+[data-theme="light"] .btn-g:hover{background:rgba(0,0,0,.09)}
+[data-theme="light"] .inp{background:var(--bg4);border-color:var(--border2);color:var(--text)}
+[data-theme="light"] .txa{background:var(--bg4);border-color:var(--border2);color:var(--text)}
+[data-theme="light"] .cpk{background:var(--bg2);border-color:var(--border)}
+[data-theme="light"] .npk{background:var(--bg2);border-color:var(--border)}
+[data-theme="light"] .sc-wr{background:var(--bg2)}
+[data-theme="light"] .chat-in{background:var(--bg4);border-color:var(--border2);color:var(--text)}
+[data-theme="light"] .mb-a{background:var(--bg3);border-color:var(--border2);color:var(--text)}
+[data-theme="light"] #themeBtn{color:var(--amber)}

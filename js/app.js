@@ -1,6 +1,7 @@
 // ─── 初期化 ───
 load();
 initSDrop();
+_syncThemeBtn(document.documentElement.getAttribute('data-theme')||'dark');
 
 if(!curId&&songs.length===0){
   const s=mkSong('無題の曲 1');songs.push(s);curId=s.id;

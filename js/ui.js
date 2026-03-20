@@ -1,5 +1,18 @@
 // ─── UI レンダリング・曲管理 ───
 
+/* ── テーマ切替 ── */
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('kch_theme',next);
+  _syncThemeBtn(next);
+}
+function _syncThemeBtn(t){
+  const btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=t==='dark'?'🌙':'☀️';
+}
+
 /* ── 曲CRUD ── */
 function addSong(){const s=mkSong();songs.unshift(s);curId=s.id;curTab='lyrics';aiHist=[];save();renderAll();}
 function delSong(id,e){e.stopPropagation();songs=songs.filter(s=>s.id!==id);if(curId===id)curId=songs[0]?.id||null;save();renderAll();}
