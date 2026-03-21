@@ -110,6 +110,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .npk-note{padding:4px 7px;border-radius:5px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--mono)}
 .npk-note:hover,.npk-note.sel{background:rgba(30,184,160,.15);border-color:var(--teal);color:var(--teal)}
 .npk-note.sharp{color:var(--text3);font-size:9px}
+.npk-note.scale{background:rgba(30,184,160,.12);border-color:rgba(30,184,160,.5)}
 .dur-row{display:flex;gap:4px;flex-wrap:wrap}
 .dur-btn{padding:4px 9px;border-radius:5px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:10px;cursor:pointer;font-family:var(--mono)}
 .dur-btn:hover,.dur-btn.sel{background:rgba(232,160,32,.15);border-color:var(--amber);color:var(--amber)}
@@ -217,6 +218,9 @@ const INSTRS={piano:{label:'ピアノ',color:'#9060e8'},bass:{label:'ベース',
 const NOTE_NAMES_JP=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const OCTAVES=[3,4,5];
 const DURS=[{v:'w',l:'全音符',b:4},{v:'h',l:'2分',b:2},{v:'q',l:'4分',b:1},{v:'8',l:'8分',b:.5},{v:'16',l:'16分',b:.25}];
+const DB={w:4,h:2,q:1,'8':0.5,'16':0.25};
+const MAJOR_SCALE=[0,2,4,5,7,9,11];
+function getScaleNotes(key){const ri=NN.indexOf(key);if(ri<0)return NN;return MAJOR_SCALE.map(i=>NN[(ri+i)%12]);}
 const gid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
@@ -262,7 +266,57 @@ function drawNoteHead(cx,pos,dur,color,sb){
 }
 function drawAccidental(cx,pos,acc,color,sb){if(!acc)return'';const y=pY(pos,sb);return`<text x="${cx-13}" y="${y+4}" font-size="10" fill="${color}" text-anchor="middle" font-family="serif">${acc==='#'?'♯':'♭'}</text>`;}
 function drawRest(cx,dur,sb){const mid=pY(4,sb);if(dur==='w')return`<rect x="${cx-6}" y="${pY(6,sb)}" width="12" height="5" fill="#555" rx="1"/>`;if(dur==='h')return`<rect x="${cx-6}" y="${pY(4,sb)-5}" width="12" height="5" fill="#555" rx="1"/>`;if(dur==='q')return`<path d="M ${cx} ${mid-14} q 5 3 0 8 q -7 3 -2 9 q 5 3 2 9" stroke="#555" fill="none" stroke-width="1.5"/>`;return`<path d="M ${cx} ${mid-6} q 7 0 2 10" stroke="#555" fill="none" stroke-width="1.5"/><circle cx="${cx+2}" cy="${mid+4}" r="2.5" fill="#555"/>`;}
-function renderNotes(notes,clef,mx,mw,sb,color){let s='';if(!notes||!notes.length){s+=drawRest(mx+mw/2,'w',sb);return s;}const bw=mw/4;for(const n of notes){if(!n?.pitch)continue;const isR=n.pitch==='R';const cx=mx+(n.startBeat||0)*bw+bw*0.55;if(isR){s+=drawRest(cx,n.duration||'q',sb);continue;}const m=n.pitch.match(/^([A-G])(#|b)?(\d)$/);if(!m)continue;const pos=pitchPos(n.pitch,clef);s+=drawNoteHead(cx,pos,n.duration||'q',color,sb);s+=drawAccidental(cx,pos,m[2]||null,color,sb);}return s;}
+function drawNoteHeadOnly(cx,pos,dur,color,sb){
+const y=pY(pos,sb);const filled=dur!=='w'&&dur!=='h';let s=ledger(cx,pos,sb);
+if(dur==='w')s+=`<ellipse cx="${cx}" cy="${y}" rx="5.5" ry="4" fill="none" stroke="${color}" stroke-width="1.6" transform="rotate(-10,${cx},${y})"/>`;
+else if(!filled)s+=`<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="white" stroke="${color}" stroke-width="1.5" transform="rotate(-10,${cx},${y})"/>`;
+else s+=`<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="${color}" transform="rotate(-10,${cx},${y})"/>`;
+return s;}
+function drawBeamGroup(group,clef,mx,bw,sb,color){
+if(group.length<2)return'';let s='';
+const realNotes=group.filter(n=>n.pitch!=='R');
+if(realNotes.length<2)return'';
+const positions=group.map(n=>n.pitch==='R'?4:pitchPos(n.pitch,clef));
+const avgPos=positions.reduce((a,b)=>a+b,0)/positions.length;
+const up=avgPos<4;
+const noteData=group.map((n,i)=>{
+const cx=mx+(n.startBeat||0)*bw+bw*0.55;
+const pos=positions[i];const y=pY(pos,sb);
+const sx=up?cx+5:cx-5;
+return{cx,pos,y,sx,dur:n.duration,isRest:n.pitch==='R'};});
+const extremeY=up?Math.min(...noteData.filter(d=>!d.isRest).map(d=>d.y)):Math.max(...noteData.filter(d=>!d.isRest).map(d=>d.y));
+const beamY=up?extremeY-26:extremeY+26;
+for(const d of noteData){if(d.isRest)continue;const sy1=d.y+(up?-1:1);s+=sLine(d.sx,sy1,d.sx,beamY,color,1.2);}
+const firstN=noteData.find(d=>!d.isRest);const lastN=[...noteData].reverse().find(d=>!d.isRest);
+if(firstN&&lastN){const bx=Math.min(firstN.sx,lastN.sx);const bw2=Math.abs(lastN.sx-firstN.sx)||1;
+s+=`<rect x="${bx}" y="${beamY-(up?3:0)}" width="${bw2}" height="3" fill="${color}" rx="0.5"/>`;}
+const beamY2=up?beamY+7:beamY-7;let bi=0;
+while(bi<noteData.length){
+if(noteData[bi].dur==='16'&&!noteData[bi].isRest){let bj=bi;while(bj<noteData.length&&noteData[bj].dur==='16')bj++;
+const seg=noteData.slice(bi,bj).filter(d=>!d.isRest);
+if(seg.length>=2){const f16=seg[0];const l16=seg[seg.length-1];s+=`<rect x="${Math.min(f16.sx,l16.sx)}" y="${beamY2-(up?3:0)}" width="${Math.abs(l16.sx-f16.sx)||1}" height="3" fill="${color}" rx="0.5"/>`;}
+else if(seg.length===1){const d=seg[0];const sd=bi>0?-1:1;s+=`<rect x="${d.sx+(sd<0?-8:0)}" y="${beamY2-(up?3:0)}" width="8" height="3" fill="${color}" rx="0.5"/>`;}
+bi=bj;}else{bi++;}}
+return s;}
+function renderNotes(notes,clef,mx,mw,sb,color){let s='';if(!notes||!notes.length){s+=drawRest(mx+mw/2,'w',sb);return s;}
+const bw=mw/4;const sorted=[...notes].filter(n=>n?.pitch).sort((a,b)=>(a.startBeat||0)-(b.startBeat||0));
+const beamGroups=[];let curGrp=[];
+for(const n of sorted){const isB=n.duration==='8'||n.duration==='16';
+if(isB){const beat=Math.floor(n.startBeat||0);
+if(curGrp.length>0){const lastBeat=Math.floor(curGrp[curGrp.length-1].startBeat||0);
+if(beat===lastBeat){curGrp.push(n);}else{if(curGrp.filter(x=>x.pitch!=='R').length>=2)beamGroups.push([...curGrp]);curGrp=[n];}}
+else{curGrp.push(n);}}
+else{if(curGrp.filter(x=>x.pitch!=='R').length>=2)beamGroups.push([...curGrp]);curGrp=[];}}
+if(curGrp.filter(x=>x.pitch!=='R').length>=2)beamGroups.push([...curGrp]);
+const beamedSet=new Set();for(const g of beamGroups)for(const n of g)beamedSet.add(n);
+for(const n of sorted){const isR=n.pitch==='R';const cx=mx+(n.startBeat||0)*bw+bw*0.55;
+if(isR){s+=drawRest(cx,n.duration||'q',sb);continue;}
+const m=n.pitch.match(/^([A-G])(#|b)?(\d)$/);if(!m)continue;const pos=pitchPos(n.pitch,clef);
+if(beamedSet.has(n)){s+=drawNoteHeadOnly(cx,pos,n.duration||'q',color,sb);}
+else{s+=drawNoteHead(cx,pos,n.duration||'q',color,sb);}
+s+=drawAccidental(cx,pos,m[2]||null,color,sb);}
+for(const g of beamGroups)s+=drawBeamGroup(g,clef,mx,bw,sb,color);
+return s;}
 
 function singleStaffSVG(measures,clef,color){
   const PT=22,PB=20,staffTop=PT,staffBot=staffTop+4*SS,svgH=staffBot+PB;
@@ -326,8 +380,8 @@ function melodyStaffSVG(measures,color='#1eb8a0'){
 }
 
 /* ─── DATA ─── */
-function mkSong(t='新しい曲'){return{id:gid(),title:t,status:'アイデア',key:'C',tempo:120,lyrics:'',memo:'',sections:DSECS.map(n=>({id:gid(),name:n,measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))})),selInstrs:['piano','bass','drums'],accomp:null,createdAt:Date.now(),updatedAt:Date.now()};}
-let songs=[],curId=null,curTab='lyrics',aiHist=[],sbVis=window.innerWidth>768,pickerOpen=null,notePickerCb=null;
+function mkSong(t='新しい曲'){return{id:gid(),title:t,status:'アイデア',key:'C',tempo:120,lyrics:'',memo:'',sections:DSECS.map(n=>({id:gid(),name:n,lyrics:'',measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))})),selInstrs:['piano','bass','drums'],accomp:null,createdAt:Date.now(),updatedAt:Date.now()};}
+let songs=[],curId=null,curTab='lyrics',aiHist=[],sbVis=window.innerWidth>768,pickerOpen=null;
 function save(){try{localStorage.setItem('kch_v4',JSON.stringify({songs,curId}));}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem('kch_v4')||'{}');songs=d.songs||[];curId=d.curId||null;}catch(e){songs=[];curId=null;}}
 function cur(){return songs.find(s=>s.id===curId);}
@@ -399,13 +453,21 @@ function renderLyrics(s){return`
   <div><label class="flbl">KEY</label><select class="inp" onchange="upd(s=>s.key=this.value)">${KEYS.map(k=>`<option${k===s.key?' selected':''}>${k}</option>`).join('')}</select></div>
   <div><label class="flbl">BPM</label><input type="number" class="inp" style="width:72px" value="${s.tempo}" min="40" max="300" onchange="upd(s=>s.tempo=parseInt(this.value)||120)"></div>
 </div>
-<div style="margin-bottom:12px">
-  <label class="flbl">LYRICS</label>
-  <textarea class="txa" id="lyricsTA" style="min-height:240px"
-    placeholder="[Aメロ]&#10;&#10;[サビ]&#10;&#10;// フレーズメモをどんどん貼り付けてOK"
+<div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:10px">セクション別 歌詞</div>
+${s.sections.map((sec,si)=>`
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:12px;margin-bottom:10px">
+  <div style="font-size:12px;font-weight:700;color:var(--amber);font-family:var(--disp);margin-bottom:8px">${esc(sec.name)}</div>
+  <textarea class="txa" style="min-height:70px;font-size:15px;line-height:2"
+    placeholder="${esc(sec.name)}の歌詞を入力..."
+    oninput="saveOnly(s=>s.sections[${si}].lyrics=this.value)">${esc(sec.lyrics||'')}</textarea>
+</div>`).join('')}
+<div style="margin-top:12px">
+  <label class="flbl">LYRICS MEMO</label>
+  <textarea class="txa" id="lyricsTA" style="min-height:100px"
+    placeholder="フレーズの下書き、参考メモなど自由に"
     oninput="saveOnly(s=>s.lyrics=this.value)">${esc(s.lyrics)}</textarea>
 </div>
-<div>
+<div style="margin-top:10px">
   <label class="flbl">MEMO</label>
   <textarea class="txa" id="memoTA" style="min-height:65px"
     placeholder="コンセプト、参考曲など"
@@ -417,14 +479,12 @@ function renderMelody(s){
   return`
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
   <span style="font-family:var(--disp);font-size:15px;font-weight:700">メロディ</span>
-  <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">音符をタップして追加 · 鳴らして確認</span>
-</div>
-<div style="font-size:11px;color:var(--text2);background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:14px;border:1px solid var(--border);line-height:1.8">
-  各セクション・各小節に音符を追加できます。<br>コードタブでコード進行を入力しておくと、コード名も一緒に表示されます。
+  <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">音名タップで即追加・即再生</span>
 </div>
 ${s.sections.map((sec,si)=>`
 <div class="mel-sec">
   <input class="mel-sec-name" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
+  ${(sec.lyrics||'')?`<div style="background:rgba(232,160,32,.06);border:1px solid rgba(232,160,32,.15);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap">${esc(sec.lyrics)}</div>`:''}
   <div style="margin-bottom:12px">
     <div class="staff-block">
       ${melodyStaffSVG(sec.measures)}
@@ -436,8 +496,8 @@ ${s.sections.map((sec,si)=>`
       <div class="mel-meas-chord">${mi+1}小節 ${m.chord?'('+m.chord+')':''}</div>
       <div class="mel-notes" id="mn_${si}_${mi}">
         ${(m.melNotes||[]).map((n,ni)=>`
-        <div class="mel-note-chip" onclick="previewNote('${n.pitch}')">
-          <span>${n.pitch}</span><span style="font-size:9px;color:rgba(30,184,160,.6)">${DURS.find(d=>d.v===n.duration)?.l||n.duration}</span>
+        <div class="mel-note-chip" ${n.pitch==='R'?'style="border-color:var(--coral);color:var(--coral);background:rgba(224,80,80,.1)"':''} onclick="${n.pitch!=='R'?`previewNote('${n.pitch}')`:''}">
+          <span>${n.pitch==='R'?'休':n.pitch}</span><span style="font-size:9px;color:${n.pitch==='R'?'rgba(224,80,80,.5)':'rgba(30,184,160,.6)'}">${DURS.find(d=>d.v===n.duration)?.l||n.duration}</span>
           <span class="del" onclick="event.stopPropagation();delMelNote(${si},${mi},${ni})">×</span>
         </div>`).join('')}
         <button class="add-note-btn" onclick="openNotePicker(event,${si},${mi})">＋ 音符</button>
@@ -451,51 +511,78 @@ ${s.sections.map((sec,si)=>`
 </div>`).join('')}`;}
 
 function previewNote(pitch){playNote(pitch);}
-function delMelNote(si,mi,ni){upd(s=>{s.sections[si].measures[mi].melNotes.splice(ni,1);});}
+function delMelNote(si,mi,ni){upd(s=>{s.sections[si].measures[mi].melNotes.splice(ni,1);let sb=0;for(const n of s.sections[si].measures[mi].melNotes){n.startBeat=sb;sb+=(DB[n.duration]||1);}});}
 function addMelMeasure(si){upd(s=>s.sections[si].measures.push({id:gid(),chord:s.sections[si].measures[s.sections[si].measures.length-1]?.chord||'',melNotes:[]}));}
 function delMelMeasure(si){upd(s=>{if(s.sections[si].measures.length>1)s.sections[si].measures.pop();});}
 
 /* ── Note Picker ── */
 let npState={pitch:'C4',dur:'q'};
+let npTarget={si:-1,mi:-1};
 function openNotePicker(e,si,mi){
   e.stopPropagation();
+  npTarget={si,mi};
   const btn=e.currentTarget;const rect=btn.getBoundingClientRect();
   const npk=document.getElementById('npk');
   npk.style.display='block';
-  const top=rect.bottom+6;const left=Math.min(rect.left,window.innerWidth-290);
-  npk.style.top=top+'px';npk.style.left=left+'px';
-  notePickerCb=(pitch,dur)=>addMelNote(si,mi,pitch,dur);
+  const isMobile=window.innerWidth<=768;
+  if(isMobile){
+    npk.style.left='8px';npk.style.right='8px';npk.style.bottom=(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav'))||62)+8+'px';
+    npk.style.top='auto';npk.style.width='auto';npk.style.maxWidth='none';
+  }else{
+    const top=Math.min(rect.bottom+6,window.innerHeight-320);
+    const left=Math.min(rect.left,window.innerWidth-290);
+    npk.style.top=Math.max(8,top)+'px';npk.style.left=Math.max(8,left)+'px';
+    npk.style.bottom='auto';npk.style.right='auto';npk.style.width='280px';
+  }
   renderNotePicker();
 }
 function renderNotePicker(){
+  const s=cur();
+  const scaleNotes=s?getScaleNotes(s.key):NN;
   const npk=document.getElementById('npk');
   npk.innerHTML=`
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
-  <span style="font-size:11px;font-weight:700;color:var(--teal);font-family:var(--mono)">音符を追加</span>
+  <span style="font-size:11px;font-weight:700;color:var(--teal);font-family:var(--mono)">タップで即追加</span>
   <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px" onclick="closeNotePicker()">✕</button>
 </div>
 <div class="npk-row">
-  <span class="npk-lbl">オクターブ</span>
-  <div style="display:flex;gap:3px">${OCTAVES.map(o=>`<button class="npk-note${npState.pitch.endsWith(o)?'.sel':''} ${npState.pitch.slice(-1)==String(o)?'sel':''}" onclick="npSetOct(${o})">${o}</button>`).join('')}</div>
+  <span class="npk-lbl">octave</span>
+  <div style="display:flex;gap:3px">${OCTAVES.map(o=>`<button class="npk-note${npState.pitch.slice(-1)==String(o)?' sel':''}" onclick="npSetOct(${o})">${o}</button>`).join('')}</div>
+</div>
+<div class="npk-row">
+  <span class="npk-lbl">音価</span>
+  <div class="dur-row">${DURS.map(d=>`<button class="dur-btn${npState.dur===d.v?' sel':''}" onclick="npSetDur('${d.v}')">${d.l}</button>`).join('')}</div>
 </div>
 <div class="npk-row">
   <span class="npk-lbl">音名</span>
-  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES_JP.map(n=>{const full=n+npState.pitch.slice(-1);const isSel=npState.pitch===full;return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}</div>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES_JP.map(n=>{const isScale=scaleNotes.includes(n);const cls='npk-note'+(n.includes('#')?' sharp':'')+(isScale?' scale':'');return'<button class="'+cls+'" onclick="npTap(\''+n+'\')">'+n+'</button>';}).join('')}
+  <button class="npk-note" style="color:var(--coral);border-color:rgba(224,80,80,.4)" onclick="npTap('R')">休</button>
+  </div>
 </div>
-<div class="npk-row"><span class="npk-lbl">音価</span><div class="dur-row">${DURS.map(d=>`<button class="dur-btn${npState.dur===d.v?' sel':''}" onclick="npSetDur('${d.v}')">${d.l}</button>`).join('')}</div></div>
-<div style="margin-top:10px;display:flex;gap:6px;align-items:center">
-  <div style="flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--teal)">${npState.pitch} / ${DURS.find(d=>d.v===npState.dur)?.l}</div>
-  <button class="btn" style="background:var(--teal);color:var(--bg);padding:7px 14px" onclick="npPreview()">▶</button>
-  <button class="btn btn-a" style="padding:7px 14px" onclick="npConfirm()">追加</button>
+<div style="margin-top:8px;font-size:10px;color:var(--text3);font-family:var(--mono)">
+  <span style="color:var(--teal)">●</span> Key: ${s?.key||'C'} スケール音
 </div>`;
 }
 function npSetOct(o){const root=npState.pitch.replace(/\d/,'');npState.pitch=root+o;renderNotePicker();}
-function npSetNote(n){const oct=npState.pitch.slice(-1);npState.pitch=n+oct;renderNotePicker();}
 function npSetDur(d){npState.dur=d;renderNotePicker();}
-function npPreview(){playNote(npState.pitch);}
-function npConfirm(){if(notePickerCb)notePickerCb(npState.pitch,npState.dur);closeNotePicker();}
-function closeNotePicker(){document.getElementById('npk').style.display='none';notePickerCb=null;}
-function addMelNote(si,mi,pitch,dur){upd(s=>{if(!s.sections[si].measures[mi].melNotes)s.sections[si].measures[mi].melNotes=[];s.sections[si].measures[mi].melNotes.push({pitch,duration:dur,startBeat:s.sections[si].measures[mi].melNotes.length*0.5});});}
+function npTap(n){
+  if(n==='R'){addMelNoteQuick(npTarget.si,npTarget.mi,'R',npState.dur);return;}
+  const oct=npState.pitch.slice(-1);npState.pitch=n+oct;
+  playNote(npState.pitch);
+  addMelNoteQuick(npTarget.si,npTarget.mi,npState.pitch,npState.dur);
+}
+function closeNotePicker(){document.getElementById('npk').style.display='none';}
+function addMelNote(si,mi,pitch,dur){upd(s=>{if(!s.sections[si].measures[mi].melNotes)s.sections[si].measures[mi].melNotes=[];let sb=0;for(const n of s.sections[si].measures[mi].melNotes){sb+=(DB[n.duration]||1);}s.sections[si].measures[mi].melNotes.push({pitch,duration:dur,startBeat:sb});});}
+function addMelNoteQuick(si,mi,pitch,dur){
+  const s=cur();if(!s)return;
+  if(!s.sections[si].measures[mi].melNotes)s.sections[si].measures[mi].melNotes=[];
+  let sb=0;for(const n of s.sections[si].measures[mi].melNotes){sb+=(DB[n.duration]||1);}
+  if(sb>=4){toast('この小節はいっぱいです');return;}
+  s.sections[si].measures[mi].melNotes.push({pitch,duration:dur,startBeat:sb});
+  s.updatedAt=Date.now();save();renderSongList();
+  const tabC=document.getElementById('tabC');const scrollY=tabC.scrollTop;
+  renderTab();tabC.scrollTop=scrollY;
+}
 
 /* ─── CHORDS ─── */
 function renderChords(s){return`
@@ -532,7 +619,7 @@ function setChordPlay(si,mi,c){setChord(si,mi,c);setTimeout(()=>playChord(c,docu
 function cpApply(si,mi){const v=document.getElementById('cpIn')?.value?.trim();if(v)setChordPlay(si,mi,v);}
 function setChord(si,mi,c){upd(s=>s.sections[si].measures[mi].chord=c);closeAllPickers();}
 function closeAllPickers(){document.querySelectorAll('.cpk').forEach(el=>el.remove());}
-function addSection(){upd(s=>s.sections.push({id:gid(),name:'新セクション',measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))}));}
+function addSection(){upd(s=>s.sections.push({id:gid(),name:'新セクション',lyrics:'',measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))}));}
 function delSection(si){upd(s=>{if(s.sections.length>1)s.sections.splice(si,1);});}
 function addMeasure(si){upd(s=>s.sections[si].measures.push({id:gid(),chord:'',melNotes:[]}));}
 function delMeasure(si,mi){upd(s=>{if(s.sections[si].measures.length>1)s.sections[si].measures.splice(mi,1);});closeAllPickers();}
@@ -615,9 +702,9 @@ function renderScore(s){return`
   <div class="sc-ti">${esc(s.title)}</div>
   <div class="sc-meta">Key: ${s.key} · BPM: ${s.tempo}</div>
   ${s.sections.map(sec=>`<div style="margin-bottom:16px"><div class="sc-sn">${esc(sec.name)}</div><div style="display:flex;flex-wrap:wrap;gap:6px">${sec.measures.map((m,i)=>`<div><div style="font-size:9px;color:var(--text3);margin-bottom:2px;font-family:var(--mono)">${i+1}</div><div class="sc-ch${m.chord?' has':''}">${m.chord||'–'}</div></div>`).join('')}</div></div>`).join('')}
-  ${s.lyrics?`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border2)"><div class="flbl">LYRICS</div><pre style="color:var(--text2);font-size:13px;line-height:2.1;white-space:pre-wrap;font-family:var(--font)">${esc(s.lyrics)}</pre></div>`:''}
+  ${s.sections.some(sec=>sec.lyrics)?`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border2)"><div class="flbl">LYRICS</div>${s.sections.filter(sec=>sec.lyrics).map(sec=>`<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--amber);font-family:var(--mono);margin-bottom:3px">${esc(sec.name)}</div><pre style="color:var(--text2);font-size:13px;line-height:2.1;white-space:pre-wrap;font-family:var(--font)">${esc(sec.lyrics)}</pre></div>`).join('')}</div>`:s.lyrics?`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border2)"><div class="flbl">LYRICS</div><pre style="color:var(--text2);font-size:13px;line-height:2.1;white-space:pre-wrap;font-family:var(--font)">${esc(s.lyrics)}</pre></div>`:''}
 </div>`;}
-function printScore(){const s=cur();if(!s)return;const w=window.open('','_blank');if(!w)return;w.document.write(`<html><head><title>${esc(s.title)}</title><style>body{font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;max-width:720px;margin:0 auto;color:#111}h1{font-size:24px;font-weight:800;margin-bottom:4px}.meta{color:#888;font-size:12px;font-family:monospace;margin-bottom:24px}.sec{margin-bottom:20px}.sn{font-weight:700;font-size:12px;color:#7c3aed;margin-bottom:8px;padding-bottom:3px;border-bottom:2px solid #7c3aed22;font-family:monospace}.cs{display:flex;flex-wrap:wrap;gap:6px}.c{text-align:center}.cn{font-size:9px;color:#bbb;margin-bottom:2px;font-family:monospace}.ch{border:1px solid #ddd;border-radius:7px;padding:7px 12px;font-size:16px;font-weight:700;color:#7c3aed;min-width:52px;font-family:monospace;text-align:center}.lyr{margin-top:26px;padding-top:20px;border-top:2px solid #eee}pre{line-height:2.2;font-size:14px;white-space:pre-wrap;font-family:inherit}</style></head><body><h1>${esc(s.title)}</h1><div class="meta">Key: ${s.key} · BPM: ${s.tempo}</div>${s.sections.map(sec=>`<div class="sec"><div class="sn">${esc(sec.name)}</div><div class="cs">${sec.measures.map((m,i)=>`<div class="c"><div class="cn">${i+1}</div><div class="ch">${m.chord||'–'}</div></div>`).join('')}</div></div>`).join('')}${s.lyrics?`<div class="lyr"><h3 style="font-size:13px;color:#888;margin-bottom:10px">歌詞</h3><pre>${esc(s.lyrics)}</pre></div>`:''}</body></html>`);w.document.close();setTimeout(()=>w.print(),400);}
+function printScore(){const s=cur();if(!s)return;const w=window.open('','_blank');if(!w)return;w.document.write(`<html><head><title>${esc(s.title)}</title><style>body{font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;max-width:720px;margin:0 auto;color:#111}h1{font-size:24px;font-weight:800;margin-bottom:4px}.meta{color:#888;font-size:12px;font-family:monospace;margin-bottom:24px}.sec{margin-bottom:20px}.sn{font-weight:700;font-size:12px;color:#7c3aed;margin-bottom:8px;padding-bottom:3px;border-bottom:2px solid #7c3aed22;font-family:monospace}.cs{display:flex;flex-wrap:wrap;gap:6px}.c{text-align:center}.cn{font-size:9px;color:#bbb;margin-bottom:2px;font-family:monospace}.ch{border:1px solid #ddd;border-radius:7px;padding:7px 12px;font-size:16px;font-weight:700;color:#7c3aed;min-width:52px;font-family:monospace;text-align:center}.lyr{margin-top:26px;padding-top:20px;border-top:2px solid #eee}pre{line-height:2.2;font-size:14px;white-space:pre-wrap;font-family:inherit}</style></head><body><h1>${esc(s.title)}</h1><div class="meta">Key: ${s.key} · BPM: ${s.tempo}</div>${s.sections.map(sec=>`<div class="sec"><div class="sn">${esc(sec.name)}</div><div class="cs">${sec.measures.map((m,i)=>`<div class="c"><div class="cn">${i+1}</div><div class="ch">${m.chord||'–'}</div></div>`).join('')}</div></div>`).join('')}${s.sections.some(sec=>sec.lyrics)?`<div class="lyr"><h3 style="font-size:13px;color:#888;margin-bottom:10px">歌詞</h3>${s.sections.filter(sec=>sec.lyrics).map(sec=>`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:4px">${esc(sec.name)}</div><pre>${esc(sec.lyrics)}</pre></div>`).join('')}</div>`:s.lyrics?`<div class="lyr"><h3 style="font-size:13px;color:#888;margin-bottom:10px">歌詞</h3><pre>${esc(s.lyrics)}</pre></div>`:''}</body></html>`);w.document.close();setTimeout(()=>w.print(),400);}
 
 /* ─── GEMINI API ─── */
 const GEMINI_KEY_ST='songbook_gemini_key';
