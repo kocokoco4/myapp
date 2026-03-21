@@ -8,6 +8,7 @@
 <title>曲帳</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>(function(){var t=localStorage.getItem('kch_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})()</script>
 <style>
 :root{
   --bg:#0b0a08;--bg2:#131210;--bg3:#1a1815;--bg4:#222018;
@@ -17,6 +18,12 @@
   --teal:#1eb8a0;--coral:#e05050;--green:#50c878;--purple:#9060e8;
   --font:'Noto Sans JP',sans-serif;--mono:'Space Mono',monospace;--disp:'Syne',sans-serif;
   --sb:230px;--nav:62px;--r:10px;--rl:16px;
+}
+[data-theme="light"]:root{
+  --bg:#f5f0e8;--bg2:#ebe6dc;--bg3:#e0dbd0;--bg4:#d6d0c5;
+  --border:#c8c0b0;--border2:#b8b0a0;
+  --text:#2a2520;--text2:#6a6050;--text3:#9a9080;
+  --amber:#c88010;--amber2:#d89020;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}
@@ -182,6 +189,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
       </button>
       <input class="title-in" id="titleIn" placeholder="曲タイトル" oninput="onTitleChange(this.value)">
       <div class="status-wr"><button class="spill" id="stBtn" onclick="toggleSDrop()"></button><div class="sdrop" id="stDrop"></div></div>
+      <button id="themeBtn" class="btn btn-g" style="padding:5px 8px;font-size:14px;flex-shrink:0" onclick="toggleTheme()" title="テーマ切替">🌙</button>
     </div>
     <div class="tabs-bar" id="tabsBar"></div>
     <div class="tab-c" id="tabC"></div>
@@ -954,6 +962,17 @@ function renderSyncBar(){
       onclick="openSettings()">⚙${hasKey?' ✓':''}</button>
   </div>`;
 }
+
+/* ─── THEME ─── */
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('kch_theme',next);
+  const btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=next==='dark'?'🌙':'☀️';
+}
+(function(){const t=localStorage.getItem('kch_theme')||'dark';const btn=document.getElementById('themeBtn');if(btn)btn.textContent=t==='dark'?'🌙':'☀️';})();
 
 /* ─── INIT ─── */
 load();initSDrop();
