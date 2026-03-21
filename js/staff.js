@@ -126,10 +126,10 @@ function singleStaffSVG(measures,clef,color,meter='4/4'){
   const CLEF_W=58,MW=152,w=CLEF_W+measures.length*MW+8;
   let svg=`<svg width="${w}" height="${svgH}" style="display:block">`;
   svg+=staveLines(2,staffTop,w-4);
-  if(clef==='bass')svg+=`<text x="6" y="${staffTop+SS*3+5}" font-size="36" fill="#333" font-family="serif">𝄢</text>`;
-  else svg+=`<text x="4" y="${staffTop+SS*5+8}" font-size="56" fill="#333" font-family="serif">𝄞</text>`;
-  svg+=`<text x="46" y="${staffTop+SS*2+2}" font-size="13" fill="#333" font-family="serif">${mBeats}</text>`;
-  svg+=`<text x="46" y="${staffTop+SS*4+2}" font-size="13" fill="#333" font-family="serif">${mUnit}</text>`;
+  if(clef==='bass')svg+=`<text x="8" y="${staffTop+SS*3+4}" font-size="32" fill="#333" font-family="serif" dominant-baseline="central">𝄢</text>`;
+  else svg+=`<text x="6" y="${staffTop+SS*2}" font-size="48" fill="#333" font-family="serif">𝄞</text>`;
+  svg+=`<text x="44" y="${staffTop+SS+4}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle">${mBeats}</text>`;
+  svg+=`<text x="44" y="${staffTop+SS*3+4}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle">${mUnit}</text>`;
   svg+=sLine(CLEF_W-3,staffTop,CLEF_W-3,staffBot,'#333',1.2);
   let x=CLEF_W;
   for(const meas of measures){
@@ -149,11 +149,11 @@ function grandStaffSVG(measures,color,meter='4/4'){
   svg+=`<path d="M 7,${RHtop} q -16,${(LHbot-RHtop)/2} 0,${LHbot-RHtop}" stroke="#333" fill="none" stroke-width="3"/>`;
   svg+=staveLines(12,RHtop,w-16);svg+=staveLines(12,LHtop,w-16);
   svg+=sLine(12,RHtop,12,LHbot,'#333',1.5);
-  svg+=`<text x="15" y="${RHtop+SS*5+8}" font-size="52" fill="#333" font-family="serif">𝄞</text>`;
-  svg+=`<text x="15" y="${LHtop+SS*3+5}" font-size="34" fill="#333" font-family="serif">𝄢</text>`;
+  svg+=`<text x="17" y="${RHtop+SS*2}" font-size="44" fill="#333" font-family="serif">𝄞</text>`;
+  svg+=`<text x="17" y="${LHtop+SS*3+4}" font-size="30" fill="#333" font-family="serif" dominant-baseline="central">𝄢</text>`;
   [RHtop,LHtop].forEach(t=>{
-    svg+=`<text x="48" y="${t+SS*2+2}" font-size="13" fill="#333" font-family="serif">${mBeats}</text>`;
-    svg+=`<text x="48" y="${t+SS*4+2}" font-size="13" fill="#333" font-family="serif">${mUnit}</text>`;
+    svg+=`<text x="46" y="${t+SS+4}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle">${mBeats}</text>`;
+    svg+=`<text x="46" y="${t+SS*3+4}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle">${mUnit}</text>`;
   });
   svg+=sLine(CLEF_W-3,RHtop,CLEF_W-3,LHbot,'#333',1.2);
   let x=CLEF_W;

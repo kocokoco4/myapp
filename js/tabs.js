@@ -259,10 +259,12 @@ function delMelMeasure(si){upd(s=>{if(s.sections[si].measures.length>1)s.section
 
 /* ── Note Picker ── */
 let npState={pitch:'C4',dur:'q'};
+let _npSi=-1,_npMi=-1;
 
 function openNotePicker(e,si,mi){
   e.stopPropagation();
   const npk=document.getElementById('npk');
+  _npSi=si;_npMi=mi;
   notePickerCb=(pitch,dur)=>addMelNote(si,mi,pitch,dur);
   if(window.innerWidth<=768){
     // スマホ：画面下部ボトムシート
@@ -398,20 +400,23 @@ function renderNotePicker(){
   }).join('')}
 </div>
 
-<!-- 確定バー -->
-<div style="margin-top:10px;display:flex;gap:6px;align-items:center">
-  <div style="flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:13px;color:var(--teal);display:flex;align-items:center;gap:6px">${npState.pitch} ${_noteSvg(npState.dur)}<span style="font-size:10px;opacity:.7">${DURS.find(d=>d.v===npState.dur)?.l||npState.dur}</span></div>
-  <button class="btn" style="background:var(--teal);color:var(--bg);padding:7px 14px" onclick="npPreview()">▶</button>
-  <button class="btn btn-a" style="padding:7px 14px" onclick="npConfirm()">追加</button>
+<!-- 休符・操作バー -->
+<div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+  <button class="btn btn-g" style="padding:7px 12px;font-size:12px;color:var(--coral);border-color:rgba(224,80,80,.4)" onclick="npAddRest()">𝄾 休符追加</button>
+  <div style="flex:1"></div>
+  <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">音名タップで即追加</div>
 </div>`;
 }
 
 function npSetOct(o){const root=npState.pitch.replace(/\d/,'');npState.pitch=root+o;renderNotePicker();}
-function npSetNote(n){const oct=npState.pitch.slice(-1);npState.pitch=n+oct;playNote(npState.pitch);renderNotePicker();}
-function npSetNoteOct(n,o){npState.pitch=n+o;playNote(npState.pitch);renderNotePicker();}
+function npSetNote(n){const oct=npState.pitch.slice(-1);npState.pitch=n+oct;playNote(npState.pitch);npAutoAdd();renderNotePicker();}
+function npSetNoteOct(n,o){npState.pitch=n+o;playNote(npState.pitch);npAutoAdd();renderNotePicker();}
 function npSetDur(d){npState.dur=d;renderNotePicker();}
 function npPreview(){playNote(npState.pitch);}
 function npConfirm(){if(notePickerCb)notePickerCb(npState.pitch,npState.dur);closeNotePicker();}
+function _npRestore(){notePickerCb=(p,d)=>addMelNote(_npSi,_npMi,p,d);}
+function npAddRest(){if(notePickerCb)notePickerCb('R',npState.dur);_npRestore();const tabC=document.getElementById('tabC');const sy=tabC.scrollTop;renderTab();tabC.scrollTop=sy;renderNotePicker();}
+function npAutoAdd(){if(!notePickerCb)return;notePickerCb(npState.pitch,npState.dur);_npRestore();const tabC=document.getElementById('tabC');const sy=tabC.scrollTop;renderTab();tabC.scrollTop=sy;}
 function closeNotePicker(){document.getElementById('npk').style.display='none';notePickerCb=null;}
 function addMelNote(si,mi,pitch,dur){
   upd(s=>{
