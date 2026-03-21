@@ -268,7 +268,7 @@ function addMelMeasure(si){upd(s=>s.sections[si].measures.push({id:gid(),chord:s
 function delMelMeasure(si){upd(s=>{if(s.sections[si].measures.length>1)s.sections[si].measures.pop();});}
 
 /* ── Note Picker ── */
-let npState={pitch:'C4',dur:'q'};
+let npState={pitch:'C4',dur:'q',rest:false};
 let _npSi=-1,_npMi=-1;
 
 function openNotePicker(e,si,mi){
@@ -390,9 +390,13 @@ function renderNotePicker(){
 <!-- 音名・オクターブ（鍵盤と連動） -->
 <div class="npk-row" style="margin-bottom:6px">
   <span class="npk-lbl">音名</span>
-  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES.map(n=>{const isSel=selNote===n;const isScale=(typeof getScaleNotes==='function')&&getScaleNotes(cur()?.key||'C').includes(n);return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}${isScale?' scale':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}<button class="npk-note" style="color:var(--coral);border-color:rgba(224,80,80,.4);font-weight:700" onclick="npAddRest()">休</button></div>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES.map(n=>{const isSel=selNote===n;const isScale=(typeof getScaleNotes==='function')&&getScaleNotes(cur()?.key||'C').includes(n);return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}${isScale?' scale':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}</div>
 </div>
-<div style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span style="color:var(--teal)">●</span> Key: ${cur()?.key||'C'} スケール音　<span style="color:var(--coral)">休</span> = 休符追加</div>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  <span style="font-size:9px;color:var(--text3);font-family:var(--mono)"><span style="color:var(--teal)">●</span> Key: ${cur()?.key||'C'} スケール音</span>
+  <div style="flex:1"></div>
+  <button class="btn ${npState.rest?'btn-a':'btn-g'}" style="font-size:10px;padding:4px 10px;${npState.rest?'background:var(--coral);border-color:var(--coral)':''}" onclick="npToggleRest()">${npState.rest?'🎵 音符に戻す':'休符モード'}</button>
+</div>
 <div class="npk-row" style="margin-bottom:10px">
   <span class="npk-lbl">オクターブ</span>
   <div style="display:flex;gap:3px">${OCTAVES.map(o=>{const lbl={3:'低',4:'中',5:'高'};return`<button class="npk-note${selOct===o?' sel':''}" onclick="npSetOct(${o})" style="min-width:38px">${o}<span style="font-size:8px;opacity:.7;margin-left:2px">${lbl[o]||''}</span></button>`;}).join('')}</div>
@@ -400,7 +404,7 @@ function renderNotePicker(){
 
 <!-- 音価（カテゴリ分け） -->
 <div style="margin-bottom:10px">
-  <div style="font-size:10px;color:var(--text2);font-family:var(--mono);margin-bottom:5px">音価</div>
+  <div style="font-size:10px;color:var(--text2);font-family:var(--mono);margin-bottom:5px">${npState.rest?'休符の長さ':'音価'}</div>
   ${['通常','付点','三連符'].map(cat=>{
     const items=DURS.filter(d=>d.cat===cat);
     return`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
@@ -411,25 +415,38 @@ function renderNotePicker(){
 </div>
 
 <!-- 操作バー -->
-<div style="margin-top:8px;text-align:center;font-size:10px;color:var(--text3);font-family:var(--mono)">音名タップで即追加・即再生</div>`;
+<div style="margin-top:8px;text-align:center;font-size:10px;color:var(--text3);font-family:var(--mono)">${npState.rest?'<span style="color:var(--coral)">休符モード：</span>音名タップで選んだ長さの休符を追加':'音名タップで即追加・即再生'}</div>`;
 }
 
+function npToggleRest(){npState.rest=!npState.rest;renderNotePicker();}
 function npSetOct(o){const root=npState.pitch.replace(/\d/,'');npState.pitch=root+o;renderNotePicker();}
-function npSetNote(n){const oct=npState.pitch.slice(-1);npState.pitch=n+oct;playNote(npState.pitch);npAutoAdd();renderNotePicker();}
-function npSetNoteOct(n,o){npState.pitch=n+o;playNote(npState.pitch);npAutoAdd();renderNotePicker();}
+function npSetNote(n){
+  const oct=npState.pitch.slice(-1);npState.pitch=n+oct;
+  if(npState.rest){npAddRest();return;}
+  playNote(npState.pitch);npAutoAdd();renderNotePicker();
+}
+function npSetNoteOct(n,o){
+  npState.pitch=n+o;
+  if(npState.rest){npAddRest();return;}
+  playNote(npState.pitch);npAutoAdd();renderNotePicker();
+}
 function npSetDur(d){npState.dur=d;renderNotePicker();}
 function npPreview(){playNote(npState.pitch);}
 function npConfirm(){if(notePickerCb)notePickerCb(npState.pitch,npState.dur);closeNotePicker();}
 function _npRestore(){notePickerCb=(p,d)=>addMelNote(_npSi,_npMi,p,d);}
-function npAddRest(){if(notePickerCb)notePickerCb('R',npState.dur);_npRestore();const tabC=document.getElementById('tabC');const sy=tabC.scrollTop;renderTab();tabC.scrollTop=sy;renderNotePicker();}
+function npAddRest(){addMelNote(_npSi,_npMi,'R',npState.dur);_npRestore();renderNotePicker();}
 function npAutoAdd(){if(!notePickerCb)return;notePickerCb(npState.pitch,npState.dur);_npRestore();const tabC=document.getElementById('tabC');const sy=tabC.scrollTop;renderTab();tabC.scrollTop=sy;}
 function closeNotePicker(){document.getElementById('npk').style.display='none';notePickerCb=null;}
 function addMelNote(si,mi,pitch,dur){
-  upd(s=>{
-    if(!s.sections[si].measures[mi].melNotes)s.sections[si].measures[mi].melNotes=[];
-    let sb=0;for(const n of s.sections[si].measures[mi].melNotes){sb+=(DB[n.duration]||1);}
-    s.sections[si].measures[mi].melNotes.push({pitch,duration:dur,startBeat:sb});
-  });
+  const s=cur();if(!s)return;
+  const m=s.sections[si].measures[mi];
+  if(!m.melNotes)m.melNotes=[];
+  let sb=0;for(const n of m.melNotes){sb+=(DB[n.duration]||1);}
+  const meterInfo=_getMeterInfo(s);
+  const maxBeats=meterInfo.beats*(4/meterInfo.unit);
+  if(sb+((DB[dur])||1)>maxBeats){toast('この小節はいっぱいです');return;}
+  m.melNotes.push({pitch,duration:dur,startBeat:sb});
+  s.updatedAt=Date.now();save();renderSongList();renderTab();
 }
 
 /* ── CHORDS ── */
@@ -589,16 +606,17 @@ function printScore(){
 function renderAI(s){
   const hasKey=!!getGeminiKey();
   const SUGG=['Aメロのコード提案して','サビをドラマチックにして','黄昏コード教えて','伴奏アレンジのアドバイス'];
-  return`<div class="chat-wr" style="height:calc(100vh - 120px);height:calc(100dvh - 120px)">
+  return`
 ${!hasKey?`<div style="background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--amber)">
   ⚠️ AIを使うにはGemini APIキーが必要です。
   <button class="btn btn-a" style="margin-left:10px;padding:4px 10px;font-size:11px" onclick="openSettings()">設定を開く</button>
 </div>`:''}
-<div class="chat-msgs" id="chatMsgs">${aiHist.length===0?`<div class="mb mb-a">「${esc(s.title)}」の制作サポートします！コード・アレンジ・歌詞など何でもどうぞ 🎵</div>`:''} ${aiHist.map(m=>`<div class="mb ${m.role==='user'?'mb-u':'mb-a'}">${m.content.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}<div id="chatBottom"></div></div>
-<div class="chat-iw">
+<div id="chatMsgs" style="margin-bottom:12px">${aiHist.length===0?`<div class="mb mb-a">「${esc(s.title)}」の制作サポートします！コード・アレンジ・歌詞など何でもどうぞ 🎵</div>`:''} ${aiHist.map(m=>`<div class="mb ${m.role==='user'?'mb-u':'mb-a'}" style="margin-bottom:8px">${m.content.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}<div id="chatBottom"></div></div>
+<div style="margin-bottom:8px">
   <div class="sugg">${SUGG.map(sg=>`<button class="sg" onclick="sendAI('${sg}')">${sg}</button>`).join('')}</div>
-  <div class="chat-row"><input id="chatIn" class="chat-in" placeholder="コード、アレンジ、メロディなど..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"><button class="btn btn-a" onclick="sendAI()">送信</button></div>
-</div></div>`;}
+</div>
+<div class="chat-row" style="margin-bottom:80px"><input id="chatIn" class="chat-in" placeholder="コード、アレンジ、メロディなど..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"><button class="btn btn-a" style="flex-shrink:0" onclick="sendAI()">送信</button></div>
+`;}
 
 /* ── DICT（コード進行辞典） ── */
 let _dictFilter='全て';
