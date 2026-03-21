@@ -12,7 +12,7 @@
   --border:#cec8bc;--border2:#bdb7ab;
   --text:#1c1916;--text2:#5a544a;--text3:#968e82;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6}
 ::-webkit-scrollbar{width:4px;height:4px}
