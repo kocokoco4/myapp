@@ -2,7 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>曲帳</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -22,20 +24,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 #app{display:flex;height:100vh}
-#sidebar{width:var(--sb);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+#sidebar{width:var(--sb);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px)}
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.topbar{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2);flex-shrink:0}
+.topbar{padding:11px 14px;padding-top:calc(11px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2);flex-shrink:0}
 .title-in{background:none;border:none;color:var(--text);font-family:var(--disp);font-size:16px;font-weight:700;flex:1;outline:none;min-width:0}
 .tabs-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;overflow-x:auto}
 .tabs-bar::-webkit-scrollbar{height:0}
 .tbtn{padding:10px 13px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:11px;white-space:nowrap;flex-shrink:0;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;font-family:var(--font)}
 .tbtn.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
 .tab-c{flex:1;overflow-y:auto;padding:16px}
-#bnav{display:none;height:var(--nav);background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;grid-template-columns:repeat(5,1fr)}
+#bnav{display:none;height:calc(var(--nav) + env(safe-area-inset-bottom,0px));background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
 .bnb{background:none;border:none;color:var(--text3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;font-family:var(--font);transition:color .15s;padding:5px 2px}
 .bnb.active{color:var(--amber)}
 .bnb-ic{font-size:18px;line-height:1}
-.sb-hd{padding:18px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sb-hd{padding:18px 14px 12px;padding-top:calc(18px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
 .sb-logo{font-family:var(--disp);font-size:17px;font-weight:800;color:var(--amber)}
 .sb-logo small{color:var(--text2);font-weight:400;font-size:12px;display:block;margin-top:-2px}
 .sb-new{width:calc(100% - 20px);margin:10px;padding:9px;background:var(--amber);border:none;border-radius:var(--r);color:var(--bg);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font)}
@@ -151,7 +153,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   #sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:799}
   #sb-overlay.open{display:block}
   #bnav{display:grid!important}
-  .tab-c{padding:12px;padding-bottom:calc(var(--nav)+16px)}
+  .tab-c{padding:12px;padding-bottom:calc(var(--nav)+env(safe-area-inset-bottom,0px)+16px)}
   .topbar{padding:9px 12px}
   .tabs-bar{display:none}
   #main{height:100vh}
@@ -170,8 +172,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
       <button class="btn btn-g" style="margin-left:auto;padding:3px 7px;font-size:11px" onclick="toggleSB()">✕</button>
     </div>
     <button class="sb-new" onclick="addSong()">＋ 新しい曲</button>
-    <div class="sb-list" id="songList"></div>
     <div id="syncBar"></div>
+    <div class="sb-list" id="songList"></div>
   </div>
   <div id="main">
     <div class="topbar" id="topbar">
@@ -939,19 +941,17 @@ function renderSyncBar(){
   const el=document.getElementById('syncBar');if(!el)return;
   const hasKey=!!getGeminiKey();
   el.innerHTML=`
-  <div style="padding:10px 12px;border-top:1px solid var(--border)">
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
-      <span id="syncStatus" style="flex:1;font-size:10px;color:${driveReady?'var(--teal)':'var(--text3)'};font-family:var(--mono);opacity:${driveReady?1:.6}">
-        ${driveReady?'✓ Drive同期中':'⬤ ローカルのみ'}
-      </span>
-      ${driveReady
-        ?`<button class="btn btn-g" style="font-size:9px;padding:3px 7px" title="最新データを読み込む"
-            onclick="driveLoad().then(ok=>{if(ok){renderAll();toast('✓ 最新データを読み込みました');}})">↻</button>`
-        :`<button class="btn btn-t" style="font-size:9px;padding:3px 9px" onclick="signInDrive()">Driveにログイン</button>`
-      }
-    </div>
-    <button class="btn btn-g" style="width:100%;font-size:10px;padding:5px;${hasKey?'color:var(--teal);border-color:rgba(30,184,160,.4)':''}"
-      onclick="openSettings()">⚙ 設定${hasKey?' (Gemini ✓)':' — APIキー未設定'}</button>
+  <div style="padding:4px 10px 6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
+    <span id="syncStatus" style="font-size:9px;color:${driveReady?'var(--teal)':'var(--text3)'};font-family:var(--mono);white-space:nowrap">
+      ${driveReady?'✓ Drive':'⬤ local'}
+    </span>
+    ${driveReady
+      ?`<button class="btn btn-g" style="font-size:8px;padding:2px 5px;flex-shrink:0" onclick="driveLoad().then(ok=>{if(ok){renderAll();toast('✓ 読み込み完了');}})">↻</button>`
+      :`<button class="btn btn-g" style="font-size:8px;padding:2px 5px;flex-shrink:0;white-space:nowrap" onclick="signInDrive()">Drive</button>`
+    }
+    <div style="flex:1"></div>
+    <button class="btn btn-g" style="font-size:9px;padding:2px 7px;flex-shrink:0;${hasKey?'color:var(--teal);border-color:rgba(30,184,160,.4)':''}"
+      onclick="openSettings()">⚙${hasKey?' ✓':''}</button>
   </div>`;
 }
 
