@@ -22,6 +22,7 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('.status-wr'))document.getElementById('stDrop').classList.remove('open');
   if(!e.target.closest('.cc')&&!e.target.closest('.cpk'))closeAllPickers();
   if(!e.target.closest('#npk')&&!e.target.closest('.add-note-btn'))closeNotePicker();
+  if(!e.target.closest('#fab'))closeFab();
 });
 
 // GIS ロード後にClientIDがあれば自動サインイン

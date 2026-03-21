@@ -35,15 +35,7 @@
     </div>
     <div class="tabs-bar" id="tabsBar"></div>
     <div class="tab-c" id="tabC"></div>
-    <div id="bnav">
-      <button class="bnb" data-tab="lyrics" onclick="switchTab('lyrics')"><span class="bnb-ic">✏️</span>歌詞</button>
-      <button class="bnb" data-tab="melody" onclick="switchTab('melody')"><span class="bnb-ic">🎵</span>メロ</button>
-      <button class="bnb" data-tab="chords" onclick="switchTab('chords')"><span class="bnb-ic">🎸</span>コード</button>
-      <button class="bnb" data-tab="accomp" onclick="switchTab('accomp')"><span class="bnb-ic">🎼</span>伴奏</button>
-      <button class="bnb" data-tab="score" onclick="switchTab('score')"><span class="bnb-ic">📋</span>譜面</button>
-      <button class="bnb" data-tab="dict" onclick="switchTab('dict')"><span class="bnb-ic">📖</span>辞典</button>
-      <button class="bnb" data-tab="ai" onclick="switchTab('ai')"><span class="bnb-ic">✦</span>AI</button>
-    </div>
+    <div id="bnav"></div>
     <div class="empty" id="emptyS" style="display:none">
       <div style="font-size:44px;opacity:.3">🎵</div>
       <div style="font-size:13px;font-weight:600;color:var(--text2)">まだ曲がありません</div>
@@ -52,6 +44,18 @@
   </div>
 </div>
 <div id="sb-overlay" onclick="closeSB()"></div>
+<div id="fab">
+  <div id="fab-menu">
+    <button class="fab-item" onclick="fabSwitch('lyrics')">✏️ 歌詞</button>
+    <button class="fab-item" onclick="fabSwitch('melody')">🎵 メロディ</button>
+    <button class="fab-item" onclick="fabSwitch('chords')">🎸 コード</button>
+    <button class="fab-item" onclick="fabSwitch('accomp')">🎼 伴奏</button>
+    <button class="fab-item" onclick="fabSwitch('score')">📋 チャート</button>
+    <button class="fab-item" onclick="fabSwitch('dict')">📖 辞典</button>
+    <button class="fab-item" onclick="fabSwitch('ai')">✦ AI相談</button>
+  </div>
+  <button id="fab-btn" onclick="toggleFab()">🎵</button>
+</div>
 <div id="toast"></div>
 <!-- Note picker popup (shared) -->
 <div id="npk" class="npk" style="display:none"></div>

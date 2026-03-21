@@ -81,8 +81,11 @@ function renderTabsBar(){
 }
 
 function renderBNav(){
-  document.querySelectorAll('.bnb').forEach(b=>b.classList.toggle('active',b.dataset.tab===curTab));
+  document.querySelectorAll('.fab-item').forEach(b=>{const t=b.getAttribute('onclick')?.match(/'(\w+)'/)?.[1];b.classList.toggle('active',t===curTab);});
 }
+function toggleFab(){document.getElementById('fab-menu').classList.toggle('open');}
+function closeFab(){const m=document.getElementById('fab-menu');if(m)m.classList.remove('open');}
+function fabSwitch(t){switchTab(t);closeFab();}
 
 function switchTab(t){curTab=t;stopSectionPlay();stopMetronome();closeNotePicker();renderTabsBar();renderBNav();renderTab();}
 
