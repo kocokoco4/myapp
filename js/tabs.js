@@ -174,7 +174,10 @@ function renderLyrics(s){return`
   <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">BPM: <strong style="color:var(--text2)">${s.tempo}</strong></span>
   <span style="font-size:10px;color:var(--text3);margin-left:4px">← メロディタブで変更</span>
 </div>
-<div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:10px">セクション別 歌詞</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+  <span style="font-family:var(--disp);font-size:15px;font-weight:700">セクション別 歌詞</span>
+  <button class="btn btn-g" style="font-size:11px;padding:5px 11px" onclick="addSection()">＋ セクション</button>
+</div>
 ${s.sections.map((sec,si)=>`
 <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:12px;margin-bottom:10px">
   <div style="font-size:12px;font-weight:700;color:var(--amber);font-family:var(--disp);margin-bottom:8px">${esc(sec.name)}</div>
@@ -249,7 +252,10 @@ ${s.sections.map((sec,si)=>`
     <button class="btn btn-g" style="font-size:10px;padding:4px 10px" onclick="transposeSection(${si},1)">半音↑</button>
     <button class="btn btn-g" style="font-size:10px;padding:4px 10px" onclick="transposeSection(${si},-1)">半音↓</button>
   </div>
-</div>`).join('')}`;
+</div>`).join('')}
+<div style="text-align:center;margin-top:10px">
+  <button class="btn btn-g" style="font-size:11px;padding:5px 14px" onclick="addSection()">＋ セクション追加</button>
+</div>`;
 }
 
 function previewNote(pitch){playNote(pitch);}
