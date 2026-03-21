@@ -24,6 +24,26 @@ function ledger(cx,pos,sb){
   if(pos>=9){for(let p=10;p<=pos+(pos%2===0?0:1);p+=2)s+=sLine(cx-lw/2,pY(p,sb),cx+lw/2,pY(p,sb),'#555',0.9);}
   return s;
 }
+// ト音記号 SVG (G clef spiral centered on G line = staffTop+3*SS)
+function _trebleClefSVG(x,staffTop){
+  const gy=staffTop+3*SS; // G line (2nd from bottom)
+  return`<g>
+    <line x1="${x+10}" y1="${gy+14}" x2="${x+10}" y2="${gy-22}" stroke="#333" stroke-width="1.4"/>
+    <path d="M ${x+10} ${gy-22} C ${x+18} ${gy-22} ${x+20} ${gy-12} ${x+16} ${gy-6} C ${x+12} ${gy} ${x+4} ${gy+2} ${x+4} ${gy+8} C ${x+4} ${gy+14} ${x+10} ${gy+14} ${x+14} ${gy+10} C ${x+18} ${gy+6} ${x+14} ${gy-2} ${x+10} ${gy} C ${x+6} ${gy+2} ${x+4} ${gy+6} ${x+6} ${gy+10}" fill="none" stroke="#333" stroke-width="1.6"/>
+    <circle cx="${x+8}" cy="${gy+16}" r="2.5" fill="#333"/>
+  </g>`;
+}
+// ヘ音記号 SVG (F clef centered on F line = staffTop+SS)
+function _bassClefSVG(x,staffTop){
+  const fy=staffTop+SS; // F line (4th = 2nd from top)
+  return`<g>
+    <circle cx="${x+8}" cy="${fy}" r="3" fill="#333"/>
+    <path d="M ${x+11} ${fy} C ${x+18} ${fy} ${x+20} ${fy+10} ${x+14} ${fy+16} C ${x+10} ${fy+20} ${x+4} ${fy+18} ${x+4} ${fy+14}" fill="none" stroke="#333" stroke-width="1.6"/>
+    <circle cx="${x+22}" cy="${fy-3}" r="1.5" fill="#333"/>
+    <circle cx="${x+22}" cy="${fy+3}" r="1.5" fill="#333"/>
+  </g>`;
+}
+
 function drawNoteHead(cx,pos,dur,color,sb){
   const y=pY(pos,sb);const filled=dur!=='w'&&dur!=='h';let s=ledger(cx,pos,sb);
   if(dur==='w')s+=`<ellipse cx="${cx}" cy="${y}" rx="5.5" ry="4" fill="none" stroke="${color}" stroke-width="1.6" transform="rotate(-10,${cx},${y})"/>`;
@@ -48,11 +68,38 @@ function drawAccidental(cx,pos,acc,color,sb){
   return`<text x="${cx-13}" y="${y+4}" font-size="10" fill="${color}" text-anchor="middle" font-family="serif">${acc==='#'?'♯':'♭'}</text>`;
 }
 function drawRest(cx,dur,sb){
-  const mid=pY(4,sb);
-  if(dur==='w')return`<rect x="${cx-6}" y="${pY(6,sb)}" width="12" height="5" fill="#555" rx="1"/>`;
-  if(dur==='h')return`<rect x="${cx-6}" y="${pY(4,sb)-5}" width="12" height="5" fill="#555" rx="1"/>`;
-  if(dur==='q')return`<path d="M ${cx} ${mid-14} q 5 3 0 8 q -7 3 -2 9 q 5 3 2 9" stroke="#555" fill="none" stroke-width="1.5"/>`;
-  return`<path d="M ${cx} ${mid-6} q 7 0 2 10" stroke="#555" fill="none" stroke-width="1.5"/><circle cx="${cx+2}" cy="${mid+4}" r="2.5" fill="#555"/>`;
+  const l2y=pY(2,sb),l4y=pY(6,sb),l3y=pY(4,sb);
+  // 全音符: 4線からぶら下がる長方形
+  if(dur==='w')return`<rect x="${cx-6}" y="${pY(6,sb)}" width="12" height="${SS/2}" fill="#444"/>`;
+  // 2分休符: 3線の上に乗る長方形
+  if(dur==='h'||dur==='h.')return`<rect x="${cx-6}" y="${l3y-SS/2}" width="12" height="${SS/2}" fill="#444"/>`;
+  // 4分休符: ジグザグ形状
+  if(dur==='q'||dur==='q.'||dur==='qt'){
+    const t=pY(7,sb),b=pY(1,sb),m=l3y;
+    return`<path d="M ${cx-1} ${t} L ${cx+5} ${m-3} L ${cx-3} ${m+1} C ${cx-1} ${m+5} ${cx+4} ${m+6} ${cx+1} ${m+10} C ${cx-3} ${m+14} ${cx-4} ${m+10} ${cx-1} ${m+6}" stroke="#444" fill="none" stroke-width="1.8" stroke-linecap="round"/>`;
+  }
+  // 8分休符: 旗+丸
+  if(dur==='8'||dur==='8.'||dur==='8t'){
+    return`<line x1="${cx+3}" y1="${l3y-6}" x2="${cx-2}" y2="${l3y+8}" stroke="#444" stroke-width="1.5"/>
+      <path d="M ${cx+3} ${l3y-6} C ${cx+8} ${l3y-3} ${cx+5} ${l3y+1} ${cx} ${l3y+1}" stroke="#444" fill="none" stroke-width="1.3"/>
+      <circle cx="${cx}" cy="${l3y+1}" r="2" fill="#444"/>`;
+  }
+  // 16分休符: 旗2つ+丸2つ
+  if(dur==='16'||dur==='16t'){
+    return`<line x1="${cx+3}" y1="${l3y-8}" x2="${cx-3}" y2="${l3y+10}" stroke="#444" stroke-width="1.5"/>
+      <path d="M ${cx+3} ${l3y-8} C ${cx+8} ${l3y-5} ${cx+5} ${l3y-1} ${cx} ${l3y-1}" stroke="#444" fill="none" stroke-width="1.2"/>
+      <circle cx="${cx}" cy="${l3y-1}" r="1.8" fill="#444"/>
+      <path d="M ${cx+1} ${l3y-1} C ${cx+6} ${l3y+2} ${cx+3} ${l3y+6} ${cx-2} ${l3y+6}" stroke="#444" fill="none" stroke-width="1.2"/>
+      <circle cx="${cx-2}" cy="${l3y+6}" r="1.8" fill="#444"/>`;
+  }
+  // 32分休符
+  return`<line x1="${cx+3}" y1="${l3y-10}" x2="${cx-4}" y2="${l3y+12}" stroke="#444" stroke-width="1.5"/>
+    <path d="M ${cx+3} ${l3y-10} C ${cx+7} ${l3y-7} ${cx+4} ${l3y-4} ${cx} ${l3y-4}" stroke="#444" fill="none" stroke-width="1.1"/>
+    <circle cx="${cx}" cy="${l3y-4}" r="1.5" fill="#444"/>
+    <path d="M ${cx+1} ${l3y-4} C ${cx+5} ${l3y-1} ${cx+2} ${l3y+2} ${cx-2} ${l3y+2}" stroke="#444" fill="none" stroke-width="1.1"/>
+    <circle cx="${cx-2}" cy="${l3y+2}" r="1.5" fill="#444"/>
+    <path d="M ${cx-1} ${l3y+2} C ${cx+3} ${l3y+5} ${cx} ${l3y+8} ${cx-4} ${l3y+8}" stroke="#444" fill="none" stroke-width="1.1"/>
+    <circle cx="${cx-4}" cy="${l3y+8}" r="1.5" fill="#444"/>`;
 }
 function drawNoteHeadOnly(cx,pos,dur,color,sb){
   const y=pY(pos,sb);const filled=dur!=='w'&&dur!=='h';let s=ledger(cx,pos,sb);
@@ -126,10 +173,10 @@ function singleStaffSVG(measures,clef,color,meter='4/4'){
   const CLEF_W=58,MW=152,w=CLEF_W+measures.length*MW+8;
   let svg=`<svg width="${w}" height="${svgH}" style="display:block">`;
   svg+=staveLines(2,staffTop,w-4);
-  if(clef==='bass')svg+=`<text x="8" y="${staffTop+SS*3+4}" font-size="32" fill="#333" font-family="serif" dominant-baseline="central">𝄢</text>`;
-  else svg+=`<text x="6" y="${staffTop+SS*2}" font-size="48" fill="#333" font-family="serif">𝄞</text>`;
-  svg+=`<text x="44" y="${staffTop+SS+4}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle">${mBeats}</text>`;
-  svg+=`<text x="44" y="${staffTop+SS*3+4}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle">${mUnit}</text>`;
+  if(clef==='bass')svg+=_bassClefSVG(8,staffTop);
+  else svg+=_trebleClefSVG(8,staffTop);
+  svg+=`<text x="44" y="${staffTop+SS*1.5+1}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle" dominant-baseline="central">${mBeats}</text>`;
+  svg+=`<text x="44" y="${staffTop+SS*3.5-1}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle" dominant-baseline="central">${mUnit}</text>`;
   svg+=sLine(CLEF_W-3,staffTop,CLEF_W-3,staffBot,'#333',1.2);
   let x=CLEF_W;
   for(const meas of measures){
@@ -149,11 +196,11 @@ function grandStaffSVG(measures,color,meter='4/4'){
   svg+=`<path d="M 7,${RHtop} q -16,${(LHbot-RHtop)/2} 0,${LHbot-RHtop}" stroke="#333" fill="none" stroke-width="3"/>`;
   svg+=staveLines(12,RHtop,w-16);svg+=staveLines(12,LHtop,w-16);
   svg+=sLine(12,RHtop,12,LHbot,'#333',1.5);
-  svg+=`<text x="17" y="${RHtop+SS*2}" font-size="44" fill="#333" font-family="serif">𝄞</text>`;
-  svg+=`<text x="17" y="${LHtop+SS*3+4}" font-size="30" fill="#333" font-family="serif" dominant-baseline="central">𝄢</text>`;
+  svg+=_trebleClefSVG(17,RHtop);
+  svg+=_bassClefSVG(17,LHtop);
   [RHtop,LHtop].forEach(t=>{
-    svg+=`<text x="46" y="${t+SS+4}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle">${mBeats}</text>`;
-    svg+=`<text x="46" y="${t+SS*3+4}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle">${mUnit}</text>`;
+    svg+=`<text x="46" y="${t+SS*1.5+1}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle" dominant-baseline="central">${mBeats}</text>`;
+    svg+=`<text x="46" y="${t+SS*3.5-1}" font-size="14" fill="#333" font-family="serif" font-weight="bold" text-anchor="middle" dominant-baseline="central">${mUnit}</text>`;
   });
   svg+=sLine(CLEF_W-3,RHtop,CLEF_W-3,LHbot,'#333',1.2);
   let x=CLEF_W;

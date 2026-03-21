@@ -181,7 +181,7 @@ function renderLyrics(s){return`
 ${s.sections.map((sec,si)=>`
 <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:12px;margin-bottom:10px">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-    <span style="font-size:12px;font-weight:700;color:var(--amber);font-family:var(--disp);flex:1">${esc(sec.name)}</span>
+    <input class="sni" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)" style="font-size:12px">
     ${s.sections.length>1?`<button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px" onclick="delSection(${si})">×</button>`:''}
   </div>
   <textarea class="txa" style="min-height:70px;font-size:15px;line-height:2"
@@ -390,9 +390,9 @@ function renderNotePicker(){
 <!-- 音名・オクターブ（鍵盤と連動） -->
 <div class="npk-row" style="margin-bottom:6px">
   <span class="npk-lbl">音名</span>
-  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES.map(n=>{const isSel=selNote===n;const isScale=(typeof getScaleNotes==='function')&&getScaleNotes(cur()?.key||'C').includes(n);return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}${isScale?' scale':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}</div>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES.map(n=>{const isSel=selNote===n;const isScale=(typeof getScaleNotes==='function')&&getScaleNotes(cur()?.key||'C').includes(n);return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}${isScale?' scale':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}<button class="npk-note" style="color:var(--coral);border-color:rgba(224,80,80,.4);font-weight:700" onclick="npAddRest()">休</button></div>
 </div>
-<div style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span style="color:var(--teal)">●</span> Key: ${cur()?.key||'C'} スケール音</div>
+<div style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span style="color:var(--teal)">●</span> Key: ${cur()?.key||'C'} スケール音　<span style="color:var(--coral)">休</span> = 休符追加</div>
 <div class="npk-row" style="margin-bottom:10px">
   <span class="npk-lbl">オクターブ</span>
   <div style="display:flex;gap:3px">${OCTAVES.map(o=>{const lbl={3:'低',4:'中',5:'高'};return`<button class="npk-note${selOct===o?' sel':''}" onclick="npSetOct(${o})" style="min-width:38px">${o}<span style="font-size:8px;opacity:.7;margin-left:2px">${lbl[o]||''}</span></button>`;}).join('')}</div>
@@ -410,12 +410,8 @@ function renderNotePicker(){
   }).join('')}
 </div>
 
-<!-- 休符・操作バー -->
-<div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-  <button class="btn btn-g" style="padding:7px 12px;font-size:12px;color:var(--coral);border-color:rgba(224,80,80,.4)" onclick="npAddRest()">𝄾 休符追加</button>
-  <div style="flex:1"></div>
-  <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">音名タップで即追加</div>
-</div>`;
+<!-- 操作バー -->
+<div style="margin-top:8px;text-align:center;font-size:10px;color:var(--text3);font-family:var(--mono)">音名タップで即追加・即再生</div>`;
 }
 
 function npSetOct(o){const root=npState.pitch.replace(/\d/,'');npState.pitch=root+o;renderNotePicker();}
@@ -593,7 +589,7 @@ function printScore(){
 function renderAI(s){
   const hasKey=!!getGeminiKey();
   const SUGG=['Aメロのコード提案して','サビをドラマチックにして','黄昏コード教えて','伴奏アレンジのアドバイス'];
-  return`<div class="chat-wr" style="height:calc(100vh - 175px)">
+  return`<div class="chat-wr" style="height:calc(100vh - 120px);height:calc(100dvh - 120px)">
 ${!hasKey?`<div style="background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--amber)">
   ⚠️ AIを使うにはGemini APIキーが必要です。
   <button class="btn btn-a" style="margin-left:10px;padding:4px 10px;font-size:11px" onclick="openSettings()">設定を開く</button>
