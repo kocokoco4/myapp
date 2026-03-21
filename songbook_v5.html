@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>曲帳</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -33,18 +33,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 #app{display:flex;height:100vh}
 #sidebar{width:var(--sb);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px)}
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.topbar{padding:11px 14px;padding-top:calc(11px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2);flex-shrink:0}
+.topbar{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2);flex-shrink:0}
 .title-in{background:none;border:none;color:var(--text);font-family:var(--disp);font-size:16px;font-weight:700;flex:1;outline:none;min-width:0}
 .tabs-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;overflow-x:auto}
 .tabs-bar::-webkit-scrollbar{height:0}
 .tbtn{padding:10px 13px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:11px;white-space:nowrap;flex-shrink:0;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;font-family:var(--font)}
 .tbtn.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
 .tab-c{flex:1;overflow-y:auto;padding:16px}
-#bnav{display:none;height:calc(var(--nav) + env(safe-area-inset-bottom,0px));background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
-.bnb{background:none;border:none;color:var(--text3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;font-family:var(--font);transition:color .15s;padding:5px 2px}
-.bnb.active{color:var(--amber)}
-.bnb-ic{font-size:18px;line-height:1}
-.sb-hd{padding:18px 14px 12px;padding-top:calc(18px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+#bnav{display:none}
+#fab{display:none;position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;z-index:600}
+#fab-btn{width:52px;height:52px;border-radius:50%;background:var(--amber);border:none;color:var(--bg);font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+#fab-btn:active{transform:scale(.9)}
+#fab-menu{position:absolute;bottom:60px;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:6px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none;min-width:150px}
+#fab-menu.open{display:block}
+.fab-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:9px;cursor:pointer;font-size:13px;font-family:var(--font);color:var(--text2);border:none;background:none;width:100%;white-space:nowrap}
+.fab-item:active,.fab-item.active{background:var(--bg4);color:var(--amber)}
+.sb-hd{padding:18px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
 .sb-logo{font-family:var(--disp);font-size:17px;font-weight:800;color:var(--amber)}
 .sb-logo small{color:var(--text2);font-weight:400;font-size:12px;display:block;margin-top:-2px}
 .sb-new{width:calc(100% - 20px);margin:10px;padding:9px;background:var(--amber);border:none;border-radius:var(--r);color:var(--bg);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font)}
@@ -159,8 +163,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   #sidebar.open{transform:translateX(0)}
   #sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:799}
   #sb-overlay.open{display:block}
-  #bnav{display:grid!important}
-  .tab-c{padding:12px;padding-bottom:calc(var(--nav)+env(safe-area-inset-bottom,0px)+16px)}
+  #fab{display:block!important}
+  .tab-c{padding:12px;padding-bottom:80px}
   .topbar{padding:9px 12px}
   .tabs-bar{display:none}
   #main{height:100vh}
@@ -193,13 +197,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     </div>
     <div class="tabs-bar" id="tabsBar"></div>
     <div class="tab-c" id="tabC"></div>
-    <div id="bnav">
-      <button class="bnb" data-tab="lyrics" onclick="switchTab('lyrics')"><span class="bnb-ic">✏️</span>歌詞</button>
-      <button class="bnb" data-tab="melody" onclick="switchTab('melody')"><span class="bnb-ic">🎵</span>メロ</button>
-      <button class="bnb" data-tab="chords" onclick="switchTab('chords')"><span class="bnb-ic">🎸</span>コード</button>
-      <button class="bnb" data-tab="accomp" onclick="switchTab('accomp')"><span class="bnb-ic">🎼</span>伴奏</button>
-      <button class="bnb" data-tab="ai" onclick="switchTab('ai')"><span class="bnb-ic">✦</span>AI</button>
-    </div>
+    <div id="bnav"></div>
     <div class="empty" id="emptyS" style="display:none">
       <div style="font-size:44px;opacity:.3">🎵</div>
       <div style="font-size:13px;font-weight:600;color:var(--text2)">まだ曲がありません</div>
@@ -208,6 +206,17 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   </div>
 </div>
 <div id="sb-overlay" onclick="closeSB()"></div>
+<div id="fab">
+  <div id="fab-menu">
+    <button class="fab-item" onclick="fabSwitch('lyrics')">✏️ 歌詞</button>
+    <button class="fab-item" onclick="fabSwitch('melody')">🎵 メロディ</button>
+    <button class="fab-item" onclick="fabSwitch('chords')">🎸 コード</button>
+    <button class="fab-item" onclick="fabSwitch('accomp')">🎼 伴奏</button>
+    <button class="fab-item" onclick="fabSwitch('score')">📋 チャート</button>
+    <button class="fab-item" onclick="fabSwitch('ai')">✦ AI相談</button>
+  </div>
+  <button id="fab-btn" onclick="toggleFab()">🎵</button>
+</div>
 <div id="toast"></div>
 <!-- Note picker popup (shared) -->
 <div id="npk" class="npk" style="display:none"></div>
@@ -444,8 +453,11 @@ function renderSongList(){
   el.innerHTML=[...songs].sort((a,b)=>b.updatedAt-a.updatedAt).map(s=>`<div class="si${s.id===curId?' active':''}" onclick="selSong('${s.id}')"><div class="sn">${esc(s.title)}</div><span class="stag" style="background:${STC[s.status]}18;color:${STC[s.status]}">${s.status}</span><button class="sdel" onclick="delSong('${s.id}',event)">×</button></div>`).join('');
 }
 function renderTabsBar(){document.getElementById('tabsBar').innerHTML=TABS.map(t=>`<button class="tbtn${t.id===curTab?' active':''}" onclick="switchTab('${t.id}')">${t.l}</button>`).join('');}
-function renderBNav(){document.querySelectorAll('.bnb').forEach(b=>b.classList.toggle('active',b.dataset.tab===curTab));}
+function renderBNav(){document.querySelectorAll('.fab-item').forEach(b=>{const t=b.getAttribute('onclick')?.match(/'(\w+)'/)?.[1];b.classList.toggle('active',t===curTab);});}
 function switchTab(t){curTab=t;closeNotePicker();renderTabsBar();renderBNav();renderTab();}
+function toggleFab(){document.getElementById('fab-menu').classList.toggle('open');}
+function closeFab(){document.getElementById('fab-menu').classList.remove('open');}
+function fabSwitch(t){switchTab(t);closeFab();}
 function renderTab(){
   const s=cur();if(!s)return;const el=document.getElementById('tabC');
   el.className='tab-c fi';void el.offsetWidth;
@@ -638,6 +650,7 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('.status-wr'))document.getElementById('stDrop').classList.remove('open');
   if(!e.target.closest('.cc')&&!e.target.closest('.cpk'))closeAllPickers();
   if(!e.target.closest('#npk')&&!e.target.closest('.add-note-btn'))closeNotePicker();
+  if(!e.target.closest('#fab'))closeFab();
 });
 
 /* ─── ACCOMP ─── */
