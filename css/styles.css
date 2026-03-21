@@ -106,6 +106,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .npk-note{padding:4px 7px;border-radius:5px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--mono)}
 .npk-note:hover,.npk-note.sel{background:rgba(30,184,160,.15);border-color:var(--teal);color:var(--teal)}
 .npk-note.sharp{color:var(--text3);font-size:9px}
+.npk-note.scale{background:rgba(30,184,160,.12);border-color:rgba(30,184,160,.5)}
 .dur-row{display:flex;gap:4px;flex-wrap:wrap}
 .dur-btn{padding:5px 8px;min-width:32px;border-radius:5px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);cursor:pointer;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 .dur-btn:hover,.dur-btn.sel{background:rgba(232,160,32,.15);border-color:var(--amber);color:var(--amber)}

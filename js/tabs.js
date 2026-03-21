@@ -174,13 +174,21 @@ function renderLyrics(s){return`
   <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">BPM: <strong style="color:var(--text2)">${s.tempo}</strong></span>
   <span style="font-size:10px;color:var(--text3);margin-left:4px">← メロディタブで変更</span>
 </div>
-<div style="margin-bottom:12px">
-  <label class="flbl">LYRICS</label>
-  <textarea class="txa" id="lyricsTA" style="min-height:240px"
-    placeholder="[Aメロ]&#10;&#10;[サビ]&#10;&#10;// フレーズメモをどんどん貼り付けてOK"
+<div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:10px">セクション別 歌詞</div>
+${s.sections.map((sec,si)=>`
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:12px;margin-bottom:10px">
+  <div style="font-size:12px;font-weight:700;color:var(--amber);font-family:var(--disp);margin-bottom:8px">${esc(sec.name)}</div>
+  <textarea class="txa" style="min-height:70px;font-size:15px;line-height:2"
+    placeholder="${esc(sec.name)}の歌詞を入力..."
+    oninput="saveOnly(s=>s.sections[${si}].lyrics=this.value)">${esc(sec.lyrics||'')}</textarea>
+</div>`).join('')}
+<div style="margin-top:12px">
+  <label class="flbl">LYRICS MEMO</label>
+  <textarea class="txa" id="lyricsTA" style="min-height:100px"
+    placeholder="フレーズの下書き、参考メモなど自由に"
     oninput="saveOnly(s=>s.lyrics=this.value)">${esc(s.lyrics)}</textarea>
 </div>
-<div>
+<div style="margin-top:10px">
   <label class="flbl">MEMO</label>
   <textarea class="txa" id="memoTA" style="min-height:65px"
     placeholder="コンセプト、参考曲など"
@@ -214,6 +222,7 @@ ${s.sections.map((sec,si)=>`
     <input class="mel-sec-name" style="margin-bottom:0" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
     <button id="mel-play-${si}" class="sec-play-btn btn btn-g" style="flex-shrink:0;font-size:10px;padding:4px 10px;white-space:nowrap" onclick="playMelSection(${si})">▶ 再生</button>
   </div>
+  ${(sec.lyrics||'')?`<div style="background:rgba(232,160,32,.06);border:1px solid rgba(232,160,32,.15);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap">${esc(sec.lyrics)}</div>`:''}
   <div style="margin-bottom:12px">
     <div class="staff-block">
       ${melodyStaffSVG(sec.measures,'#1eb8a0',s.meter||'4/4')}
@@ -244,7 +253,7 @@ ${s.sections.map((sec,si)=>`
 }
 
 function previewNote(pitch){playNote(pitch);}
-function delMelNote(si,mi,ni){upd(s=>{s.sections[si].measures[mi].melNotes.splice(ni,1);});}
+function delMelNote(si,mi,ni){upd(s=>{s.sections[si].measures[mi].melNotes.splice(ni,1);let sb=0;for(const n of s.sections[si].measures[mi].melNotes){n.startBeat=sb;sb+=(DB[n.duration]||1);}});}
 function addMelMeasure(si){upd(s=>s.sections[si].measures.push({id:gid(),chord:s.sections[si].measures[s.sections[si].measures.length-1]?.chord||'',melNotes:[]}));}
 function delMelMeasure(si){upd(s=>{if(s.sections[si].measures.length>1)s.sections[si].measures.pop();});}
 
@@ -369,8 +378,9 @@ function renderNotePicker(){
 <!-- 音名・オクターブ（鍵盤と連動） -->
 <div class="npk-row" style="margin-bottom:6px">
   <span class="npk-lbl">音名</span>
-  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES.map(n=>{const isSel=selNote===n;return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}</div>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">${NOTE_NAMES.map(n=>{const isSel=selNote===n;const isScale=(typeof getScaleNotes==='function')&&getScaleNotes(cur()?.key||'C').includes(n);return`<button class="npk-note${isSel?' sel':''}${n.includes('#')?' sharp':''}${isScale?' scale':''}" onclick="npSetNote('${n}')">${n}</button>`;}).join('')}</div>
 </div>
+<div style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-bottom:6px"><span style="color:var(--teal)">●</span> Key: ${cur()?.key||'C'} スケール音</div>
 <div class="npk-row" style="margin-bottom:10px">
   <span class="npk-lbl">オクターブ</span>
   <div style="display:flex;gap:3px">${OCTAVES.map(o=>{const lbl={3:'低',4:'中',5:'高'};return`<button class="npk-note${selOct===o?' sel':''}" onclick="npSetOct(${o})" style="min-width:38px">${o}<span style="font-size:8px;opacity:.7;margin-left:2px">${lbl[o]||''}</span></button>`;}).join('')}</div>
@@ -397,7 +407,7 @@ function renderNotePicker(){
 }
 
 function npSetOct(o){const root=npState.pitch.replace(/\d/,'');npState.pitch=root+o;renderNotePicker();}
-function npSetNote(n){const oct=npState.pitch.slice(-1);npState.pitch=n+oct;renderNotePicker();}
+function npSetNote(n){const oct=npState.pitch.slice(-1);npState.pitch=n+oct;playNote(npState.pitch);renderNotePicker();}
 function npSetNoteOct(n,o){npState.pitch=n+o;playNote(npState.pitch);renderNotePicker();}
 function npSetDur(d){npState.dur=d;renderNotePicker();}
 function npPreview(){playNote(npState.pitch);}
@@ -406,7 +416,8 @@ function closeNotePicker(){document.getElementById('npk').style.display='none';n
 function addMelNote(si,mi,pitch,dur){
   upd(s=>{
     if(!s.sections[si].measures[mi].melNotes)s.sections[si].measures[mi].melNotes=[];
-    s.sections[si].measures[mi].melNotes.push({pitch,duration:dur,startBeat:s.sections[si].measures[mi].melNotes.length*0.5});
+    let sb=0;for(const n of s.sections[si].measures[mi].melNotes){sb+=(DB[n.duration]||1);}
+    s.sections[si].measures[mi].melNotes.push({pitch,duration:dur,startBeat:sb});
   });
 }
 
@@ -453,7 +464,7 @@ function setChordPlay(si,mi,c){setChord(si,mi,c);setTimeout(()=>playChord(c,docu
 function cpApply(si,mi){const v=document.getElementById('cpIn')?.value?.trim();if(v)setChordPlay(si,mi,v);}
 function setChord(si,mi,c){upd(s=>s.sections[si].measures[mi].chord=c);closeAllPickers();}
 function closeAllPickers(){document.querySelectorAll('.cpk').forEach(el=>el.remove());}
-function addSection(){upd(s=>s.sections.push({id:gid(),name:'新セクション',measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))}));}
+function addSection(){upd(s=>s.sections.push({id:gid(),name:'新セクション',lyrics:'',measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))}));}
 function delSection(si){upd(s=>{if(s.sections.length>1)s.sections.splice(si,1);});}
 function addMeasure(si){upd(s=>s.sections[si].measures.push({id:gid(),chord:'',melNotes:[]}));}
 function delMeasure(si,mi){upd(s=>{if(s.sections[si].measures.length>1)s.sections[si].measures.splice(mi,1);});closeAllPickers();}

@@ -3,7 +3,7 @@ function mkSong(t='新しい曲'){
   return{
     id:gid(),title:t,status:'アイデア',key:'C',tempo:120,meter:'4/4',
     lyrics:'',memo:'',
-    sections:DSECS.map(n=>({id:gid(),name:n,measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))})),
+    sections:DSECS.map(n=>({id:gid(),name:n,lyrics:'',measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))})),
     selInstrs:['piano','bass','drums'],
     accomp:null,createdAt:Date.now(),updatedAt:Date.now()
   };

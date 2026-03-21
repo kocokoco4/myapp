@@ -54,20 +54,69 @@ function drawRest(cx,dur,sb){
   if(dur==='q')return`<path d="M ${cx} ${mid-14} q 5 3 0 8 q -7 3 -2 9 q 5 3 2 9" stroke="#555" fill="none" stroke-width="1.5"/>`;
   return`<path d="M ${cx} ${mid-6} q 7 0 2 10" stroke="#555" fill="none" stroke-width="1.5"/><circle cx="${cx+2}" cy="${mid+4}" r="2.5" fill="#555"/>`;
 }
+function drawNoteHeadOnly(cx,pos,dur,color,sb){
+  const y=pY(pos,sb);const filled=dur!=='w'&&dur!=='h';let s=ledger(cx,pos,sb);
+  if(dur==='w')s+=`<ellipse cx="${cx}" cy="${y}" rx="5.5" ry="4" fill="none" stroke="${color}" stroke-width="1.6" transform="rotate(-10,${cx},${y})"/>`;
+  else if(!filled)s+=`<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="white" stroke="${color}" stroke-width="1.5" transform="rotate(-10,${cx},${y})"/>`;
+  else s+=`<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="${color}" transform="rotate(-10,${cx},${y})"/>`;
+  return s;
+}
+function drawBeamGroup(group,clef,mx,bw,sb,color){
+  if(group.length<2)return'';let s='';
+  const realNotes=group.filter(n=>n.pitch!=='R');
+  if(realNotes.length<2)return'';
+  const positions=group.map(n=>n.pitch==='R'?4:pitchPos(n.pitch,clef));
+  const avgPos=positions.reduce((a,b)=>a+b,0)/positions.length;
+  const up=avgPos<4;
+  const noteData=group.map((n,i)=>{
+    const cx=mx+(n.startBeat||0)*bw+bw*0.55;
+    const pos=positions[i];const y=pY(pos,sb);
+    const sx=up?cx+5:cx-5;
+    return{cx,pos,y,sx,dur:n.duration,isRest:n.pitch==='R'};
+  });
+  const extremeY=up?Math.min(...noteData.filter(d=>!d.isRest).map(d=>d.y)):Math.max(...noteData.filter(d=>!d.isRest).map(d=>d.y));
+  const beamY=up?extremeY-26:extremeY+26;
+  for(const d of noteData){if(d.isRest)continue;s+=sLine(d.sx,d.y+(up?-1:1),d.sx,beamY,color,1.2);}
+  const firstN=noteData.find(d=>!d.isRest);const lastN=[...noteData].reverse().find(d=>!d.isRest);
+  if(firstN&&lastN){const bx=Math.min(firstN.sx,lastN.sx);const bw2=Math.abs(lastN.sx-firstN.sx)||1;
+    s+=`<rect x="${bx}" y="${beamY-(up?3:0)}" width="${bw2}" height="3" fill="${color}" rx="0.5"/>`;}
+  const beamY2=up?beamY+7:beamY-7;let bi=0;
+  while(bi<noteData.length){
+    if(noteData[bi].dur==='16'&&!noteData[bi].isRest){let bj=bi;while(bj<noteData.length&&noteData[bj].dur==='16')bj++;
+      const seg=noteData.slice(bi,bj).filter(d=>!d.isRest);
+      if(seg.length>=2){s+=`<rect x="${Math.min(seg[0].sx,seg[seg.length-1].sx)}" y="${beamY2-(up?3:0)}" width="${Math.abs(seg[seg.length-1].sx-seg[0].sx)||1}" height="3" fill="${color}" rx="0.5"/>`;}
+      else if(seg.length===1){const sd=bi>0?-1:1;s+=`<rect x="${seg[0].sx+(sd<0?-8:0)}" y="${beamY2-(up?3:0)}" width="8" height="3" fill="${color}" rx="0.5"/>`;}
+      bi=bj;}else{bi++;}
+  }
+  return s;
+}
 function renderNotes(notes,clef,mx,mw,sb,color){
   let s='';
   if(!notes||!notes.length){s+=drawRest(mx+mw/2,'w',sb);return s;}
   const bw=mw/4;
-  for(const n of notes){
-    if(!n?.pitch)continue;
-    const isR=n.pitch==='R';
-    const cx=mx+(n.startBeat||0)*bw+bw*0.55;
+  const sorted=[...notes].filter(n=>n?.pitch).sort((a,b)=>(a.startBeat||0)-(b.startBeat||0));
+  // beam groups
+  const beamGroups=[];let curGrp=[];
+  for(const n of sorted){
+    const isB=n.duration==='8'||n.duration==='16';
+    if(isB){const beat=Math.floor(n.startBeat||0);
+      if(curGrp.length>0){const lb=Math.floor(curGrp[curGrp.length-1].startBeat||0);
+        if(beat===lb){curGrp.push(n);}else{if(curGrp.filter(x=>x.pitch!=='R').length>=2)beamGroups.push([...curGrp]);curGrp=[n];}
+      }else{curGrp.push(n);}
+    }else{if(curGrp.filter(x=>x.pitch!=='R').length>=2)beamGroups.push([...curGrp]);curGrp=[];}
+  }
+  if(curGrp.filter(x=>x.pitch!=='R').length>=2)beamGroups.push([...curGrp]);
+  const beamedSet=new Set();for(const g of beamGroups)for(const n of g)beamedSet.add(n);
+  for(const n of sorted){
+    const isR=n.pitch==='R';const cx=mx+(n.startBeat||0)*bw+bw*0.55;
     if(isR){s+=drawRest(cx,n.duration||'q',sb);continue;}
     const m=n.pitch.match(/^([A-G])(#|b)?(\d)$/);if(!m)continue;
     const pos=pitchPos(n.pitch,clef);
-    s+=drawNoteHead(cx,pos,n.duration||'q',color,sb);
+    if(beamedSet.has(n)){s+=drawNoteHeadOnly(cx,pos,n.duration||'q',color,sb);}
+    else{s+=drawNoteHead(cx,pos,n.duration||'q',color,sb);}
     s+=drawAccidental(cx,pos,m[2]||null,color,sb);
   }
+  for(const g of beamGroups)s+=drawBeamGroup(g,clef,mx,bw,sb,color);
   return s;
 }
 

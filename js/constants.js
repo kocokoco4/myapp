@@ -185,5 +185,9 @@ const MUSIC_BASICS=[
    tip:'スケールを覚えると「キーに合うメロディ」がわかります。まずCメジャー（白鍵だけ）から試してみよう。'},
 ];
 
+const DB={w:4,h:2,q:1,'8':0.5,'16':0.25,'32':0.125,'h.':3,'q.':1.5,'8.':0.75,qt:2/3,'8t':1/3,'16t':1/6};
+const MAJOR_SCALE=[0,2,4,5,7,9,11];
+function getScaleNotes(key){const ri=KEYS.indexOf(key);if(ri<0)return KEYS;return MAJOR_SCALE.map(i=>KEYS[(ri+i)%12]);}
+
 const gid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
