@@ -180,7 +180,10 @@ function renderLyrics(s){return`
 </div>
 ${s.sections.map((sec,si)=>`
 <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:12px;margin-bottom:10px">
-  <div style="font-size:12px;font-weight:700;color:var(--amber);font-family:var(--disp);margin-bottom:8px">${esc(sec.name)}</div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <span style="font-size:12px;font-weight:700;color:var(--amber);font-family:var(--disp);flex:1">${esc(sec.name)}</span>
+    ${s.sections.length>1?`<button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px" onclick="delSection(${si})">×</button>`:''}
+  </div>
   <textarea class="txa" style="min-height:70px;font-size:15px;line-height:2"
     placeholder="${esc(sec.name)}の歌詞を入力..."
     oninput="saveOnly(s=>s.sections[${si}].lyrics=this.value)">${esc(sec.lyrics||'')}</textarea>
@@ -224,6 +227,7 @@ ${s.sections.map((sec,si)=>`
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <input class="mel-sec-name" style="margin-bottom:0" value="${esc(sec.name)}" oninput="saveOnly(s=>s.sections[${si}].name=this.value)">
     <button id="mel-play-${si}" class="sec-play-btn btn btn-g" style="flex-shrink:0;font-size:10px;padding:4px 10px;white-space:nowrap" onclick="playMelSection(${si})">▶ 再生</button>
+    ${s.sections.length>1?`<button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0" onclick="delSection(${si})">×</button>`:''}
   </div>
   ${(sec.lyrics||'')?`<div style="background:rgba(232,160,32,.06);border:1px solid rgba(232,160,32,.15);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap">${esc(sec.lyrics)}</div>`:''}
   <div style="margin-bottom:12px">
@@ -476,7 +480,7 @@ function cpApply(si,mi){const v=document.getElementById('cpIn')?.value?.trim();i
 function setChord(si,mi,c){upd(s=>s.sections[si].measures[mi].chord=c);closeAllPickers();}
 function closeAllPickers(){document.querySelectorAll('.cpk').forEach(el=>el.remove());}
 function addSection(){upd(s=>s.sections.push({id:gid(),name:'新セクション',lyrics:'',measures:Array(4).fill(0).map(()=>({id:gid(),chord:'',melNotes:[]}))}));}
-function delSection(si){upd(s=>{if(s.sections.length>1)s.sections.splice(si,1);});}
+function delSection(si){const s=cur();if(!s||s.sections.length<=1){toast('最低1つのセクションが必要です');return;}const name=s.sections[si].name||'セクション';if(!confirm(`「${name}」を削除しますか？\nコード・メロディ・歌詞がすべて消えます。`))return;upd(s=>{s.sections.splice(si,1);});}
 function addMeasure(si){upd(s=>s.sections[si].measures.push({id:gid(),chord:'',melNotes:[]}));}
 function delMeasure(si,mi){upd(s=>{if(s.sections[si].measures.length>1)s.sections[si].measures.splice(mi,1);});closeAllPickers();}
 function applyProgByIdx(si,qi){applyProg(si,QP[qi].c);}
