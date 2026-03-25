@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://kocokoco4.github.io/myapp/songbook_v5.html)",
+      "Bash(for f:*)",
+      "Bash(do node:*)",
+      "Bash(echo \"OK: $f\")",
+      "Bash(echo \"ERR: $f\")",
+      "Bash(done)",
+      "Bash(node -e \"new Function\\(require\\(''fs''\\).readFileSync\\(''js/tabs.js'',''utf8''\\)\\)\")"
+    ]
+  }
+}
