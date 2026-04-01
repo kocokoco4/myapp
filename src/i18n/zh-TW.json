@@ -1,0 +1,142 @@
+{
+  "app": {
+    "name": "曲帳",
+    "subtitle": "songbook",
+    "loading": "載入中...",
+    "newSong": "＋ 新歌曲",
+    "defaultTitle": "新歌曲",
+    "untitled": "無題"
+  },
+  "tabs": {
+    "compose": "創作",
+    "arrange": "伴奏·譜面",
+    "ai": "AI 諮詢"
+  },
+  "status": {
+    "idea": "靈感",
+    "writing": "寫詞中",
+    "composing": "作曲中",
+    "recording": "錄音中",
+    "done": "完成"
+  },
+  "topbar": {
+    "songTitle": "歌曲標題",
+    "themeToggle": "切換主題",
+    "settings": "設定",
+    "updateAvailable": "有新版本 — 點擊更新",
+    "update": "重新整理"
+  },
+  "compose": {
+    "key": "KEY",
+    "bpm": "BPM",
+    "timeSig": "拍號",
+    "addSection": "+ 段落",
+    "addMeasure": "+小節",
+    "removeMeasure": "- 小節",
+    "play": "▶ 播放",
+    "stop": "■ 停止",
+    "lyrics": "歌詞",
+    "chords": "和弦",
+    "melody": "旋律",
+    "lyricsPlaceholder": " 輸入歌詞...",
+    "chordInput": "輸入和弦（例：Am7）",
+    "firstHalf": "前半",
+    "secondHalf": "後半",
+    "clear": "清除",
+    "deleteMeasure": "刪除小節",
+    "addNote": "+ 音",
+    "addToMeasure": "加到小節",
+    "duration": "音值",
+    "noteName": "音名",
+    "rest": "休",
+    "addRest": "+ 休止符",
+    "scaleNote": "音階音",
+    "buttonMode": "按鈕",
+    "keyboardMode": "鍵盤",
+    "measureFull": "此小節已滿",
+    "assignSyllables": "歌詞對應旋律",
+    "syllableHint": "自動將每個字對應到音符",
+    "syllablesAssigned": "個音已對應歌詞",
+    "lyricsMemo": "歌詞備忘",
+    "lyricsMemoPlaceholder": "草稿、參考詞句...",
+    "memo": "備忘",
+    "memoPlaceholder": "概念、參考曲目...",
+    "deleteSection": " — 確定刪除此段落？此操作無法復原。",
+    "cancel": "取消",
+    "delete": "刪除"
+  },
+  "mood": {
+    "title": "從氛圍開始",
+    "subtitle": "mood × template",
+    "emotion": "情感",
+    "scene": "場景",
+    "energy": "能量",
+    "relation": "對象",
+    "select": "選擇...",
+    "generate": "生成",
+    "generating": "生成中...",
+    "apply": "使用這首曲",
+    "retry": "重試",
+    "applied": "已套用到歌曲",
+    "sections": "段落",
+    "emotions": ["想哭的夜", "向前的早晨", "心跳不安", "安心", "心動", "憤怒"],
+    "scenes": ["雨中窗邊", "夏末", "冬日歸途", "夜的街道", "清晨光線", "懷念的地方"],
+    "energies": ["靜靜燃燒", "想吶喊", "慢慢唱", "想跳舞"],
+    "relations": ["給喜歡的人", "給遠去的人", "給自己", "給某個人"]
+  },
+  "arrange": {
+    "instruments": "選擇樂器",
+    "generate": "AI 伴奏生成",
+    "generating": "生成中...",
+    "generated": "伴奏譜面已生成！",
+    "musicxml": "MusicXML",
+    "musicxmlHint": "下載 MusicXML，用 LogicPro 開啟",
+    "midi": "MIDI",
+    "midiHint": "下載 MIDI，用 GarageBand 開啟",
+    "chart": "圖表",
+    "accomp": "伴奏",
+    "printChart": "列印 PDF",
+    "noAccomp": "請先生成伴奏"
+  },
+  "ai": {
+    "placeholder": "和弦、編曲、旋律等...",
+    "send": "發送",
+    "noKey": "請在設定中輸入 Gemini API 金鑰",
+    "suggestions": ["建議A段和弦", "讓副歌更戲劇化", "教我黃昏和弦", "編曲建議"]
+  },
+  "settings": {
+    "title": "設定",
+    "geminiKey": "Gemini API 金鑰",
+    "geminiKeyPlaceholder": "輸入 API 金鑰",
+    "save": "儲存",
+    "close": "關閉"
+  },
+  "sidebar": {
+    "deleteSong": " — 確定刪除？",
+    "cannotUndo": "此操作無法復原。",
+    "logout": "登出",
+    "empty": "— 空的 —"
+  },
+  "instruments": {
+    "piano": "鋼琴",
+    "bass": "貝斯",
+    "guitar": "吉他",
+    "drums": "鼓"
+  },
+  "durations": {
+    "w": "𝅝 全音符",
+    "h": "𝅗𝅥 二分",
+    "q": "♩ 四分",
+    "8": "♪ 八分",
+    "16": "♬ 十六分",
+    "tq": "3連♩",
+    "t8": "3連♪"
+  },
+  "progressions": {
+    "royal": "王道進行",
+    "komuro": "小室進行",
+    "canon": "卡農",
+    "dark": "暗系",
+    "4536": "4-5-3-6"
+  }
+}

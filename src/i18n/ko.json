@@ -1,0 +1,142 @@
+{
+  "app": {
+    "name": "곡첩",
+    "subtitle": "songbook",
+    "loading": "로딩 중...",
+    "newSong": "＋ 새 곡",
+    "defaultTitle": "새 곡",
+    "untitled": "무제"
+  },
+  "tabs": {
+    "compose": "작곡",
+    "arrange": "반주·스코어",
+    "ai": "AI 상담"
+  },
+  "status": {
+    "idea": "아이디어",
+    "writing": "작사 중",
+    "composing": "작곡 중",
+    "recording": "녹음 중",
+    "done": "완성"
+  },
+  "topbar": {
+    "songTitle": "곡 제목",
+    "themeToggle": "테마 전환",
+    "settings": "설정",
+    "updateAvailable": "새 버전이 있습니다 — 탭하여 업데이트",
+    "update": "앱 새로고침"
+  },
+  "compose": {
+    "key": "KEY",
+    "bpm": "BPM",
+    "timeSig": "박자",
+    "addSection": "+ 섹션",
+    "addMeasure": "+마디",
+    "removeMeasure": "- 마디",
+    "play": "▶ 재생",
+    "stop": "■ 정지",
+    "lyrics": "가사",
+    "chords": "코드",
+    "melody": "멜로디",
+    "lyricsPlaceholder": " 가사를 입력...",
+    "chordInput": "코드 입력 (예: Am7)",
+    "firstHalf": "전반",
+    "secondHalf": "후반",
+    "clear": "지우기",
+    "deleteMeasure": "마디 삭제",
+    "addNote": "+ 음",
+    "addToMeasure": "마디에 추가",
+    "duration": "음가",
+    "noteName": "음이름",
+    "rest": "쉼",
+    "addRest": "+ 쉼표",
+    "scaleNote": "스케일 음",
+    "buttonMode": "버튼",
+    "keyboardMode": "건반",
+    "measureFull": "이 마디가 꽉 찼습니다",
+    "assignSyllables": "가사를 멜로디에 배정",
+    "syllableHint": "각 글자를 음표에 자동 매핑",
+    "syllablesAssigned": "개 음에 실라블 배정됨",
+    "lyricsMemo": "가사 메모",
+    "lyricsMemoPlaceholder": "프레이즈 초안, 참고 메모...",
+    "memo": "메모",
+    "memoPlaceholder": "컨셉, 참고곡 등",
+    "deleteSection": "을(를) 삭제하시겠습니까? 되돌릴 수 없습니다.",
+    "cancel": "취소",
+    "delete": "삭제"
+  },
+  "mood": {
+    "title": "분위기로 만들기",
+    "subtitle": "mood × template",
+    "emotion": "감정",
+    "scene": "풍경",
+    "energy": "텐션",
+    "relation": "관계",
+    "select": "선택...",
+    "generate": "생성",
+    "generating": "생성 중...",
+    "apply": "이 곡으로 시작",
+    "retry": "다시 하기",
+    "applied": "곡에 반영됨",
+    "sections": "섹션",
+    "emotions": ["울고 싶은 밤", "앞을 향한 아침", "가슴이 두근", "안심", "설렘", "분노"],
+    "scenes": ["비 오는 창가", "여름의 끝", "겨울 귀갓길", "밤의 거리", "아침 빛", "그리운 곳"],
+    "energies": ["조용히 타오르는", "소리치고 싶은", "천천히 부르고 싶은", "춤추고 싶은"],
+    "relations": ["좋아하는 사람에게", "멀어진 사람에게", "나 자신에게", "누군가에게"]
+  },
+  "arrange": {
+    "instruments": "악기 선택",
+    "generate": "AI 반주 생성",
+    "generating": "생성 중...",
+    "generated": "반주 악보 생성 완료!",
+    "musicxml": "MusicXML",
+    "musicxmlHint": "MusicXML 다운로드. LogicPro에서 열기",
+    "midi": "MIDI",
+    "midiHint": "MIDI 다운로드. GarageBand에서 열기",
+    "chart": "차트",
+    "accomp": "반주",
+    "printChart": "PDF 인쇄",
+    "noAccomp": "반주를 생성해 주세요"
+  },
+  "ai": {
+    "placeholder": "코드, 편곡, 멜로디 등...",
+    "send": "전송",
+    "noKey": "설정에서 Gemini API 키를 입력하세요",
+    "suggestions": ["A멜로디 코드 제안", "사비를 드라마틱하게", "황혼 코드 알려줘", "편곡 조언"]
+  },
+  "settings": {
+    "title": "설정",
+    "geminiKey": "Gemini API 키",
+    "geminiKeyPlaceholder": "API 키 입력",
+    "save": "저장",
+    "close": "닫기"
+  },
+  "sidebar": {
+    "deleteSong": "을(를) 삭제하시겠습니까?",
+    "cannotUndo": "되돌릴 수 없습니다.",
+    "logout": "로그아웃",
+    "empty": "— 비어있음 —"
+  },
+  "instruments": {
+    "piano": "피아노",
+    "bass": "베이스",
+    "guitar": "기타",
+    "drums": "드럼"
+  },
+  "durations": {
+    "w": "𝅝 온음표",
+    "h": "𝅗𝅥 2분",
+    "q": "♩ 4분",
+    "8": "♪ 8분",
+    "16": "♬ 16분",
+    "tq": "3연♩",
+    "t8": "3연♪"
+  },
+  "progressions": {
+    "royal": "왕도진행",
+    "komuro": "코무로진행",
+    "canon": "캐논",
+    "dark": "어두운 계열",
+    "4536": "4-5-3-6"
+  }
+}

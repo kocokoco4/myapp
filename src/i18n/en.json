@@ -1,0 +1,147 @@
+{
+  "app": {
+    "name": "Kyokucho",
+    "subtitle": "songbook",
+    "loading": "Loading...",
+    "newSong": "+ New Song",
+    "defaultTitle": "New Song",
+    "untitled": "Untitled"
+  },
+  "tabs": {
+    "compose": "Compose",
+    "arrange": "Arrange",
+    "ai": "AI Chat"
+  },
+  "status": {
+    "idea": "Idea",
+    "writing": "Writing",
+    "composing": "Composing",
+    "recording": "Recording",
+    "done": "Done"
+  },
+  "topbar": {
+    "songTitle": "Song Title",
+    "themeToggle": "Toggle Theme",
+    "settings": "Settings",
+    "updateAvailable": "New version available — tap to update",
+    "update": "Refresh App"
+  },
+  "compose": {
+    "key": "KEY",
+    "bpm": "BPM",
+    "timeSig": "Time",
+    "addSection": "+ Section",
+    "addMeasure": "+Bar",
+    "removeMeasure": "- Bar",
+    "play": "▶ Play",
+    "stop": "■ Stop",
+    "lyrics": "Lyrics",
+    "chords": "Chords",
+    "melody": "Melody",
+    "lyricsPlaceholder": " lyrics here...",
+    "chordInput": "Enter chord (e.g. Am7)",
+    "firstHalf": "1st half",
+    "secondHalf": "2nd half",
+    "clear": "Clear",
+    "deleteMeasure": "Delete Bar",
+    "addNote": "+ Note",
+    "addToMeasure": "Add to bar",
+    "duration": "Duration",
+    "noteName": "Note",
+    "rest": "Rest",
+    "addRest": "+ Rest",
+    "scaleNote": "Scale notes",
+    "buttonMode": "Buttons",
+    "keyboardMode": "Keys",
+    "measureFull": "This bar is full",
+    "assignSyllables": "Map lyrics to melody",
+    "syllableHint": "Auto-map each character to a note",
+    "syllablesAssigned": " notes mapped with syllables",
+    "lyricsMemo": "LYRICS MEMO",
+    "lyricsMemoPlaceholder": "Drafts, phrases, reference...",
+    "memo": "MEMO",
+    "memoPlaceholder": "Concept, reference songs...",
+    "deleteSection": " — delete this section? This cannot be undone.",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  },
+  "mood": {
+    "title": "Create from Mood",
+    "subtitle": "mood × template",
+    "emotion": "Emotion",
+    "scene": "Scene",
+    "energy": "Energy",
+    "relation": "For",
+    "select": "Choose...",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "apply": "Start with this",
+    "retry": "Try again",
+    "applied": "Applied to song",
+    "sections": "sections",
+    "emotions": ["Crying night", "Hopeful morning", "Restless heart", "Relieved", "Excited", "Angry"],
+    "scenes": ["Rainy window", "End of summer", "Winter walk home", "Night city", "Morning light", "Nostalgic place"],
+    "energies": ["Quietly burning", "Want to scream", "Sing softly", "Want to dance"],
+    "relations": ["To someone I love", "To someone far away", "To myself", "To someone"]
+  },
+  "arrange": {
+    "instruments": "Select Instruments",
+    "generate": "AI Arrange",
+    "generating": "Generating...",
+    "generated": "Arrangement generated!",
+    "musicxml": "MusicXML",
+    "musicxmlHint": "Download MusicXML. Open in LogicPro",
+    "midi": "MIDI",
+    "midiHint": "Download MIDI. Open in GarageBand",
+    "chart": "Chart",
+    "accomp": "Accomp",
+    "printChart": "Print PDF",
+    "noAccomp": "Generate accompaniment first"
+  },
+  "ai": {
+    "placeholder": "Ask about chords, arrangement, melody...",
+    "send": "Send",
+    "noKey": "Set Gemini API key in Settings",
+    "suggestions": [
+      "Suggest chords for verse",
+      "Make the chorus dramatic",
+      "Teach me twilight chords",
+      "Advice on arrangement"
+    ]
+  },
+  "settings": {
+    "title": "Settings",
+    "geminiKey": "Gemini API Key",
+    "geminiKeyPlaceholder": "Enter API key",
+    "save": "Save",
+    "close": "Close"
+  },
+  "sidebar": {
+    "deleteSong": " — delete this song?",
+    "cannotUndo": "This cannot be undone.",
+    "logout": "Logout",
+    "empty": "— empty —"
+  },
+  "instruments": {
+    "piano": "Piano",
+    "bass": "Bass",
+    "guitar": "Guitar",
+    "drums": "Drums"
+  },
+  "durations": {
+    "w": "𝅝 Whole",
+    "h": "𝅗𝅥 Half",
+    "q": "♩ Quarter",
+    "8": "♪ 8th",
+    "16": "♬ 16th",
+    "tq": "3♩ Triplet",
+    "t8": "3♪ Triplet"
+  },
+  "progressions": {
+    "royal": "I-V-vi-IV",
+    "komuro": "vi-IV-V-I",
+    "canon": "Canon",
+    "dark": "Dark",
+    "4536": "IV-V-iii-vi"
+  }
+}

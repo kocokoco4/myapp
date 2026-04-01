@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>曲帳 データ移行ツール</title>
+<style>
+  body { background: #0b0a08; color: #ede8dd; font-family: 'Noto Sans JP', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 16px; }
+  .card { background: #131210; border: 1px solid #3a3628; border-radius: 18px; padding: 32px; max-width: 400px; width: 100%; text-align: center; }
+  h1 { color: #e8a020; font-size: 20px; margin-bottom: 8px; }
+  p { color: #8a8070; font-size: 13px; line-height: 1.8; margin-bottom: 20px; }
+  .count { color: #1eb8a0; font-size: 14px; font-weight: bold; margin-bottom: 20px; }
+  button { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+  .btn-main { background: #e8a020; color: #0b0a08; }
+  .btn-sub { background: transparent; border: 1px solid #3a3628; color: #8a8070; }
+  .empty { color: #e05050; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🎵 曲帳データ移行</h1>
+  <p>このページを<strong>旧アプリと同じブラウザ</strong>で開いてください。<br>保存されている曲データをファイルとしてダウンロードできます。</p>
+  <div id="status"></div>
+  <button class="btn-main" id="dlBtn" onclick="downloadData()">⬇ データをダウンロード</button>
+  <button class="btn-sub" onclick="window.close()">閉じる</button>
+</div>
+<script>
+  const data = localStorage.getItem('kch_v4');
+  const statusEl = document.getElementById('status');
+  const dlBtn = document.getElementById('dlBtn');
+  if (data) {
+    try {
+      const d = JSON.parse(data);
+      const count = (d.songs || []).length;
+      statusEl.innerHTML = '<div class="count">✓ ' + count + '曲のデータが見つかりました</div>';
+    } catch(e) {
+      statusEl.innerHTML = '<div class="count">✓ データが見つかりました</div>';
+    }
+  } else {
+    statusEl.innerHTML = '<div class="empty">⚠ このブラウザにデータがありません。<br>旧アプリを使っていたブラウザで開いてください。</div>';
+    dlBtn.disabled = true;
+    dlBtn.style.opacity = '0.3';
+  }
+  function downloadData() {
+    if (!data) return;
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'kyokucho_data.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    statusEl.innerHTML += '<div style="color:#50c878;margin-top:10px;font-size:12px">✓ ダウンロード完了！<br>新アプリの設定画面から「JSONファイルから読み込み」で取り込んでください。</div>';
+  }
+</script>
+</body>
+</html>

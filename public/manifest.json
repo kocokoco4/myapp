@@ -1,0 +1,14 @@
+{
+  "name": "曲帳",
+  "short_name": "曲帳",
+  "description": "個人作曲家のためのオールインワン制作サポートアプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0a08",
+  "theme_color": "#e8a020",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

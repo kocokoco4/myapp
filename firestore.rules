@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // デフォルト拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ユーザーメタ（curId等）
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+
+      // 曲コレクション（サブコレクション）
+      match /songs/{songId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidSong();
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidSong() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['title', 'key', 'tempo', 'createdAt', 'updatedAt'])
+        && data.title is string
+        && data.title.size() <= 200
+        && data.tempo is number;
+    }
+  }
+}

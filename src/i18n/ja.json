@@ -1,0 +1,147 @@
+{
+  "app": {
+    "name": "曲帳",
+    "subtitle": "songbook",
+    "loading": "読み込み中...",
+    "newSong": "＋ 新しい曲",
+    "defaultTitle": "新しい曲",
+    "untitled": "無題の曲"
+  },
+  "tabs": {
+    "compose": "制作",
+    "arrange": "伴奏・スコア",
+    "ai": "AI相談"
+  },
+  "status": {
+    "idea": "アイデア",
+    "writing": "作詞中",
+    "composing": "作曲中",
+    "recording": "録音中",
+    "done": "完成"
+  },
+  "topbar": {
+    "songTitle": "曲タイトル",
+    "themeToggle": "テーマ切替",
+    "settings": "設定",
+    "updateAvailable": "新しいバージョンがあります — タップで更新",
+    "update": "アプリを更新"
+  },
+  "compose": {
+    "key": "KEY",
+    "bpm": "BPM",
+    "timeSig": "拍子",
+    "addSection": "+ セクション",
+    "addMeasure": "+小節",
+    "removeMeasure": "- 小節",
+    "play": "▶ 再生",
+    "stop": "■ 停止",
+    "lyrics": "Lyrics",
+    "chords": "Chords",
+    "melody": "Melody",
+    "lyricsPlaceholder": "の歌詞を入力...",
+    "chordInput": "コードを入力（例: Am7）",
+    "firstHalf": "前半",
+    "secondHalf": "後半",
+    "clear": "クリア",
+    "deleteMeasure": "小節削除",
+    "addNote": "+ 音",
+    "addToMeasure": "小節に追加",
+    "duration": "音価",
+    "noteName": "音名",
+    "rest": "休",
+    "addRest": "+ 休符",
+    "scaleNote": "スケール音",
+    "buttonMode": "ボタン",
+    "keyboardMode": "鍵盤",
+    "measureFull": "この小節はいっぱいです",
+    "assignSyllables": "歌詞をメロディに割当",
+    "syllableHint": "歌詞の各文字を音符に自動マッピング",
+    "syllablesAssigned": "音にシラブルを割当しました",
+    "lyricsMemo": "LYRICS MEMO",
+    "lyricsMemoPlaceholder": "フレーズの下書き、参考メモなど自由に",
+    "memo": "MEMO",
+    "memoPlaceholder": "コンセプト、参考曲など",
+    "deleteSection": "を削除しますか？この操作は元に戻せません。",
+    "cancel": "キャンセル",
+    "delete": "削除する"
+  },
+  "mood": {
+    "title": "雰囲気から作る",
+    "subtitle": "mood × template",
+    "emotion": "感情",
+    "scene": "景色",
+    "energy": "テンション",
+    "relation": "関係性",
+    "select": "選択...",
+    "generate": "生成する",
+    "generating": "生成中...",
+    "apply": "この曲で始める",
+    "retry": "やり直す",
+    "applied": "曲に反映しました",
+    "sections": "セクション",
+    "emotions": ["泣きたい夜", "前を向く朝", "胸がざわざわする", "ほっとする", "ときめいてる", "怒ってる"],
+    "scenes": ["雨の窓際", "夏の終わり", "冬の帰り道", "夜の街", "朝の光", "懐かしい場所"],
+    "energies": ["静かに燃えてる", "叫びたい", "ゆっくり歌いたい", "踊りたい"],
+    "relations": ["好きな人へ", "遠くなった人へ", "自分へ", "誰かへ"]
+  },
+  "arrange": {
+    "instruments": "楽器を選択",
+    "generate": "AI伴奏生成",
+    "generating": "生成中...",
+    "generated": "伴奏譜面を生成しました！",
+    "musicxml": "MusicXML出力",
+    "musicxmlHint": "MusicXMLをダウンロード。LogicProで開いてください",
+    "midi": "MIDI出力",
+    "midiHint": "MIDIをダウンロード。GarageBandで開いてください",
+    "chart": "チャート",
+    "accomp": "伴奏",
+    "printChart": "PDF印刷",
+    "noAccomp": "伴奏を生成してください"
+  },
+  "ai": {
+    "placeholder": "コード、アレンジ、メロディなど...",
+    "send": "送信",
+    "noKey": "設定でGemini APIキーを入力してください",
+    "suggestions": [
+      "Aメロのコード提案して",
+      "サビをドラマチックにして",
+      "黄昏コード教えて",
+      "伴奏アレンジのアドバイス"
+    ]
+  },
+  "settings": {
+    "title": "設定",
+    "geminiKey": "Gemini APIキー",
+    "geminiKeyPlaceholder": "AIキーを入力",
+    "save": "保存",
+    "close": "閉じる"
+  },
+  "sidebar": {
+    "deleteSong": "を削除しますか？",
+    "cannotUndo": "この操作は元に戻せません。",
+    "logout": "ログアウト",
+    "empty": "— empty —"
+  },
+  "instruments": {
+    "piano": "ピアノ",
+    "bass": "ベース",
+    "guitar": "ギター",
+    "drums": "ドラム"
+  },
+  "durations": {
+    "w": "𝅝 全音符",
+    "h": "𝅗𝅥 2分",
+    "q": "♩ 4分",
+    "8": "♪ 8分",
+    "16": "♬ 16分",
+    "tq": "3連♩",
+    "t8": "3連♪"
+  },
+  "progressions": {
+    "royal": "王道進行",
+    "komuro": "小室進行",
+    "canon": "カノン",
+    "dark": "暗い系",
+    "4536": "4-5-3-6"
+  }
+}
