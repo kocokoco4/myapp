@@ -4,6 +4,8 @@ import { KEYS, CHORD_LIST, QUICK_PROGRESSIONS, NOTE_NAMES, OCTAVES, DURATIONS, D
 import { playChord, playNote, getScaleNotes, playSectionAudio } from '../utils/audio'
 import { melodyStaffSVG } from '../utils/staff'
 import { gid } from '../utils/id'
+import { createPitchDetector, type PitchDetector } from '../utils/pitchDetect'
+import { useI18n } from '../i18n'
 import MoodGenerator from './MoodGenerator'
 
 /* ─────────────── セクション内 サブエリア切替 ─────────────── */
@@ -49,6 +51,7 @@ interface SectionCardProps {
 
 function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
   const { currentSong, updateSong, saveOnly, toast } = useStore()
+  const { t } = useI18n()
   const song = currentSong()!
   const sec = song.sections[si]
 
@@ -57,7 +60,10 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
   const [chordSlot, setChordSlot] = useState<number>(0) // 0=前半, 1=後半
   const [notePicker, setNotePicker] = useState<number | null>(null)
   const [npState, setNpState] = useState({ pitch: 'C4', dur: 'q' })
-  const [npInputMode, setNpInputMode] = useState<'buttons' | 'keyboard'>('buttons')
+  const [npInputMode, setNpInputMode] = useState<'buttons' | 'keyboard' | 'mic'>('buttons')
+  const pitchDetectorRef = useRef<PitchDetector | null>(null)
+  const [micActive, setMicActive] = useState(false)
+  const [detectedPitch, setDetectedPitch] = useState<string | null>(null)
   const cpRef = useRef<HTMLDivElement>(null)
   const npRef = useRef<HTMLDivElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -225,7 +231,7 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
                 : 'bg-transparent text-text3 border border-border2 hover:border-teal hover:text-teal'}`}
             onClick={handlePlay}
           >
-            {playing ? '停止' : '再生'}
+            {playing ? t('compose.stop') : t('compose.play')}
           </button>
           {canDelete && (
             <button
@@ -255,14 +261,14 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
             className="text-[11px] px-2 py-1 border border-border2 rounded-md text-text2 bg-transparent hover:border-amber hover:text-amber font-sans"
             onClick={() => updateSong(s => s.sections[si].measures.push({ id: gid(), chord: '', melNotes: [] }))}
           >
-            +小節
+            {t('compose.addMeasure')}
           </button>
           {sec.measures.length > 1 && (
             <button
               className="text-[11px] px-2 py-1 border border-border2 rounded-md text-text3 bg-transparent hover:border-coral hover:text-coral font-sans"
               onClick={() => updateSong(s => { if (s.sections[si].measures.length > 1) s.sections[si].measures.pop() })}
             >
-              -小節
+              {t('compose.removeMeasure')}
             </button>
           )}
         </div>
@@ -274,7 +280,7 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
           <div>
             <textarea
               className="bg-bg4 border border-border2 rounded-[10px] text-text p-3 text-[15px] leading-[2] resize-none outline-none w-full font-sans min-h-[60px] focus:border-amber"
-              placeholder={`${sec.name}の歌詞を入力...`}
+              placeholder={`${sec.name}${t('compose.lyricsPlaceholder')}`}
               value={sec.lyrics || ''}
               onChange={e => {
                 const val = e.target.value
@@ -563,7 +569,7 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
 
             {/* Note picker — center modal overlay */}
             {notePicker !== null && (
-              <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/40" onClick={() => setNotePicker(null)}>
+              <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/40" onClick={() => { setNotePicker(null); pitchDetectorRef.current?.stop(); setMicActive(false); setDetectedPitch(null) }}>
                 <div
                   ref={npRef}
                   className="bg-bg3 border border-border2 rounded-2xl p-4 mx-3 max-w-[380px] w-full shadow-[0_16px_48px_rgba(0,0,0,0.6)] max-h-[85vh] overflow-y-auto"
@@ -575,18 +581,26 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
                     </span>
                     {/* Input mode toggle */}
                     <div className="flex gap-1">
-                      {(['buttons', 'keyboard'] as const).map(mode => (
+                      {(['buttons', 'keyboard', 'mic'] as const).map(mode => (
                         <button
                           key={mode}
                           className={`text-[10px] px-2 py-1 rounded border font-mono
                             ${npInputMode === mode ? 'bg-amber/15 border-amber text-amber' : 'bg-bg4 border-border2 text-text3'}`}
-                          onClick={() => setNpInputMode(mode)}
+                          onClick={() => {
+                            setNpInputMode(mode)
+                            // Stop mic when switching away
+                            if (mode !== 'mic' && pitchDetectorRef.current) {
+                              pitchDetectorRef.current.stop()
+                              setMicActive(false)
+                              setDetectedPitch(null)
+                            }
+                          }}
                         >
-                          {mode === 'buttons' ? 'ボタン' : '鍵盤'}
+                          {mode === 'buttons' ? 'ボタン' : mode === 'keyboard' ? '鍵盤' : 'マイク'}
                         </button>
                       ))}
                     </div>
-                    <button className="bg-transparent border-none text-text3 cursor-pointer text-lg px-1" onClick={() => setNotePicker(null)}>✕</button>
+                    <button className="bg-transparent border-none text-text3 cursor-pointer text-lg px-1" onClick={() => { setNotePicker(null); pitchDetectorRef.current?.stop(); setMicActive(false); setDetectedPitch(null) }}>✕</button>
                   </div>
 
                   {/* Duration + Octave row */}
@@ -730,6 +744,64 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
                     </div>
                   )}
 
+                  {/* Mic mode — pitch detection */}
+                  {npInputMode === 'mic' && (
+                    <div className="text-center py-4">
+                      <div className="mb-3">
+                        {detectedPitch ? (
+                          <div className="text-3xl font-mono font-bold text-amber animate-pulse">{detectedPitch}</div>
+                        ) : (
+                          <div className="text-lg text-text3 font-mono">{micActive ? '歌ってください...' : 'マイクを開始してください'}</div>
+                        )}
+                      </div>
+                      <div className="flex gap-2 justify-center mb-3">
+                        <button
+                          className={`px-4 py-2.5 rounded-lg text-sm font-sans font-bold transition-colors
+                            ${micActive
+                              ? 'bg-coral/15 border border-coral text-coral'
+                              : 'bg-teal/15 border border-teal text-teal'}`}
+                          onClick={async () => {
+                            if (micActive) {
+                              pitchDetectorRef.current?.stop()
+                              setMicActive(false)
+                              setDetectedPitch(null)
+                            } else {
+                              const detector = createPitchDetector((pitch) => {
+                                setDetectedPitch(pitch)
+                                playNote(pitch)
+                              })
+                              pitchDetectorRef.current = detector
+                              try {
+                                await detector.start()
+                                setMicActive(true)
+                              } catch {
+                                toast('マイクへのアクセスが許可されていません')
+                              }
+                            }
+                          }}
+                        >
+                          {micActive ? '停止' : 'マイク開始'}
+                        </button>
+                        {detectedPitch && (
+                          <button
+                            className="px-4 py-2.5 rounded-lg text-sm font-sans font-bold bg-amber text-bg"
+                            onClick={() => {
+                              if (notePicker !== null && detectedPitch) {
+                                addNote(notePicker, detectedPitch, npState.dur)
+                              }
+                            }}
+                          >
+                            {detectedPitch} を入力
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-text3 font-sans leading-relaxed">
+                        音を歌うかハミングすると音高を検出します。<br/>
+                        検出された音名が表示されたら「入力」ボタンで追加できます。
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <div className="text-[10px] text-text3 font-mono">
                       <span className="text-amber">*</span> Key: {songKey} スケール音
@@ -773,6 +845,7 @@ export default function ComposeTab() {
     setPlayingAll(true)
     setTimeout(() => { allStopRef.current = null; setPlayingAll(false) }, result.durationMs + 100)
   }, [song])
+  const { t: t2 } = useI18n()
   if (!song) return null
 
   return (
@@ -837,7 +910,7 @@ export default function ComposeTab() {
               : 'border-border2 text-text2 bg-transparent hover:border-teal hover:text-teal'}`}
           onClick={handlePlayAll}
         >
-          {playingAll ? '■ 停止' : '▶ 通し再生'}
+          {playingAll ? t2('compose.stop') : t2('compose.play')}
         </button>
         <button
           className="text-[11px] px-3 py-1.5 border border-border2 rounded-lg text-text2 bg-transparent hover:border-amber hover:text-amber font-sans"
@@ -846,7 +919,7 @@ export default function ComposeTab() {
             measures: Array(4).fill(0).map(() => ({ id: gid(), chord: '', melNotes: [] })),
           }))}
         >
-          + セクション
+          {t2('compose.addSection')}
         </button>
       </div>
 
@@ -861,19 +934,19 @@ export default function ComposeTab() {
       {/* Memos */}
       <div className="mt-2 space-y-2.5">
         <div>
-          <label className="text-[10px] text-text2 font-bold block mb-1 font-mono tracking-wider">LYRICS MEMO</label>
+          <label className="text-[10px] text-text2 font-bold block mb-1 font-mono tracking-wider">{t2('compose.lyricsMemo')}</label>
           <textarea
             className="bg-bg4 border border-border2 rounded-[10px] text-text p-3 text-base leading-[2] resize-none outline-none w-full font-sans min-h-[80px] focus:border-amber"
-            placeholder="フレーズの下書き、参考メモなど自由に"
+            placeholder={t2('compose.lyricsMemoPlaceholder')}
             value={song.lyrics}
             onChange={e => saveOnly(s => { s.lyrics = e.target.value })}
           />
         </div>
         <div>
-          <label className="text-[10px] text-text2 font-bold block mb-1 font-mono tracking-wider">MEMO</label>
+          <label className="text-[10px] text-text2 font-bold block mb-1 font-mono tracking-wider">{t2('compose.memo')}</label>
           <textarea
             className="bg-bg4 border border-border2 rounded-[10px] text-text p-3 text-base leading-[2] resize-none outline-none w-full font-sans min-h-[55px] focus:border-amber"
-            placeholder="コンセプト、参考曲など"
+            placeholder={t2('compose.memoPlaceholder')}
             value={song.memo}
             onChange={e => saveOnly(s => { s.memo = e.target.value })}
           />
