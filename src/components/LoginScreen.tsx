@@ -1,5 +1,6 @@
 import { signInWithPopup } from 'firebase/auth'
 import { auth, googleProvider } from '../firebase'
+import FinchAvatar from './FinchAvatar'
 
 export default function LoginScreen() {
   const handleLogin = async () => {
@@ -13,8 +14,8 @@ export default function LoginScreen() {
   return (
     <div className="h-screen flex items-center justify-center bg-bg">
       <div className="text-center max-w-sm px-6">
-        <div className="w-16 h-16 mb-4 mx-auto rounded-2xl overflow-hidden shadow-lg"><img src="/icon-192.png" alt="曲帳" className="w-full h-full" /></div>
-        <h1 className="font-display text-3xl font-extrabold text-amber mb-2">曲帳</h1>
+        <div className="mb-4"><FinchAvatar size={80} mood="wave" /></div>
+        <h1 className="font-display text-3xl font-extrabold text-amber mb-2">Finchant</h1>
         <p className="text-text2 text-sm mb-8 leading-relaxed">
           作曲のすべてを、ひとつに。<br />
           歌詞・コード・メロディ・伴奏をまとめて管理。

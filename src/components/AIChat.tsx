@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../store'
 import { AI_SUGGESTIONS } from '../constants'
 import { callGemini, getGeminiKey } from '../utils/gemini'
+import FinchAvatar from './FinchAvatar'
 
 interface Props {
   onOpenSettings: () => void
@@ -97,26 +98,35 @@ export default function AIChat({ onOpenSettings }: Props) {
       {/* Messages */}
       <div ref={msgsRef} className="flex-1 overflow-y-auto flex flex-col gap-2.5 pb-2.5">
         {aiHist.length === 0 && (
-          <div className="self-start max-w-[84%] px-3.5 py-2.5 rounded-[14px] text-[13px] leading-[1.7] bg-bg3 text-text border border-border2 rounded-bl-sm">
-            {mode === 'help'
-              ? '曲帳の使い方を聞いてください。機能や操作方法を説明します。'
-              : `「${song.title}」の制作サポートします。コード・アレンジ・歌詞など何でもどうぞ`}
+          <div className="self-start max-w-[84%] flex items-start gap-2">
+            <FinchAvatar size={32} mood="wave" className="shrink-0 mt-1" />
+            <div className="px-3.5 py-2.5 rounded-[14px] text-[13px] leading-[1.7] bg-bg3 text-text border border-border2 rounded-bl-sm">
+              {mode === 'help'
+                ? 'Finchantの使い方を聞いてください。機能や操作方法を説明します。'
+                : `「${song.title}」の制作サポートします。コード・アレンジ・歌詞など何でもどうぞ`}
+            </div>
           </div>
         )}
         {aiHist.map((m, i) => (
-          <div
-            key={i}
-            className={`max-w-[84%] px-3.5 py-2.5 rounded-[14px] text-[13px] leading-[1.7]
-              ${m.role === 'user'
-                ? 'self-end bg-amber text-bg rounded-br-sm font-medium'
-                : 'self-start bg-bg3 text-text border border-border2 rounded-bl-sm'}`}
-            dangerouslySetInnerHTML={{
-              __html: m.content
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n/g, '<br>'),
-            }}
-          />
+          m.role === 'user' ? (
+            <div key={i} className="self-end max-w-[84%] px-3.5 py-2.5 rounded-[14px] text-[13px] leading-[1.7] bg-amber text-bg rounded-br-sm font-medium"
+              dangerouslySetInnerHTML={{ __html: m.content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>') }}
+            />
+          ) : (
+            <div key={i} className="self-start max-w-[84%] flex items-start gap-2">
+              <FinchAvatar size={28} mood={m.content.includes('?') ? 'thinking' : 'happy'} className="shrink-0 mt-1" />
+              <div className="px-3.5 py-2.5 rounded-[14px] text-[13px] leading-[1.7] bg-bg3 text-text border border-border2 rounded-bl-sm"
+                dangerouslySetInnerHTML={{ __html: m.content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>') }}
+              />
+            </div>
+          )
         ))}
+        {sending && (
+          <div className="self-start flex items-center gap-2">
+            <FinchAvatar size={28} mood="thinking" className="shrink-0" />
+            <span className="text-text3 text-[12px] font-mono animate-pulse">考え中...</span>
+          </div>
+        )}
       </div>
 
       {/* Input area */}

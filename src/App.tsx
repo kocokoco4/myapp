@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { StoreProvider, useStore } from './store'
 import { I18nContext, createI18nValue, LANG_STORAGE_KEY, type LangCode } from './i18n'
+import FinchAvatar from './components/FinchAvatar'
 import LoginScreen from './components/LoginScreen'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
@@ -48,8 +49,8 @@ function AppContent() {
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-3">
-            <div className="text-2xl font-display font-bold text-amber/30">曲帳</div>
-            <div className="text-[13px] font-semibold text-text2">まだ曲がありません</div>
+            <FinchAvatar size={64} mood="wave" />
+            <div className="text-[13px] font-semibold text-text2">最初の曲を作りましょう</div>
             <button
               className="px-4 py-2 bg-amber text-bg rounded-lg font-bold text-xs cursor-pointer border-none"
               onClick={addSong}

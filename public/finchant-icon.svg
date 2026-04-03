@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background: deep purple gradient -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#2a1050"/>
+      <stop offset="100%" stop-color="#0a0518"/>
+    </radialGradient>
+    <radialGradient id="bodyGrad" cx="45%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#f0c850"/>
+      <stop offset="70%" stop-color="#c88020"/>
+      <stop offset="100%" stop-color="#a06010"/>
+    </radialGradient>
+    <radialGradient id="bellyGrad" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#fff8e0"/>
+      <stop offset="100%" stop-color="#f0d880"/>
+    </radialGradient>
+    <radialGradient id="cheekGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff9080"/>
+      <stop offset="100%" stop-color="#e06050"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- Stars -->
+  <circle cx="80" cy="60" r="1.5" fill="#fff" opacity="0.6"/>
+  <circle cx="420" cy="90" r="2" fill="#fff" opacity="0.5"/>
+  <circle cx="140" cy="400" r="1.5" fill="#fff" opacity="0.4"/>
+  <circle cx="380" cy="380" r="1" fill="#fff" opacity="0.6"/>
+  <circle cx="60" cy="250" r="1.5" fill="#fff" opacity="0.3"/>
+  <circle cx="450" cy="230" r="1.5" fill="#fff" opacity="0.5"/>
+  <circle cx="200" cy="50" r="1" fill="#fff" opacity="0.4"/>
+  <circle cx="350" cy="440" r="1.5" fill="#fff" opacity="0.3"/>
+  <circle cx="100" cy="150" r="1" fill="#fff" opacity="0.5"/>
+  <circle cx="430" cy="150" r="1" fill="#fff" opacity="0.4"/>
+
+  <!-- Music staff lines (subtle, behind bird) -->
+  <g opacity="0.12" stroke="#e8a020" stroke-width="1.5">
+    <line x1="40" y1="320" x2="472" y2="320"/>
+    <line x1="40" y1="340" x2="472" y2="340"/>
+    <line x1="40" y1="360" x2="472" y2="360"/>
+    <line x1="40" y1="380" x2="472" y2="380"/>
+    <line x1="40" y1="400" x2="472" y2="400"/>
+  </g>
+
+  <!-- Shadow under bird -->
+  <ellipse cx="256" cy="410" rx="90" ry="16" fill="#000" opacity="0.2"/>
+
+  <!-- Tail feathers -->
+  <path d="M 180 310 Q 120 350 100 400 Q 130 370 160 340 Z" fill="#8a6018" opacity="0.9"/>
+  <path d="M 175 305 Q 110 330 85 380 Q 120 355 155 330 Z" fill="#a07020" opacity="0.8"/>
+  <path d="M 185 315 Q 135 365 120 410 Q 145 380 170 350 Z" fill="#705010" opacity="0.7"/>
+
+  <!-- Body -->
+  <ellipse cx="260" cy="280" rx="95" ry="110" fill="url(#bodyGrad)"/>
+
+  <!-- Belly -->
+  <ellipse cx="265" cy="310" rx="60" ry="70" fill="url(#bellyGrad)"/>
+
+  <!-- Wing (folded) -->
+  <path d="M 200 240 Q 170 290 190 360 Q 220 340 240 280 Z" fill="#9a6818" stroke="#806010" stroke-width="1"/>
+  <path d="M 205 260 Q 185 300 195 340" fill="none" stroke="#806010" stroke-width="1.5" opacity="0.5"/>
+  <path d="M 210 270 Q 190 310 200 345" fill="none" stroke="#806010" stroke-width="1" opacity="0.4"/>
+
+  <!-- Head -->
+  <circle cx="290" cy="190" r="65" fill="url(#bodyGrad)"/>
+
+  <!-- Cheek -->
+  <ellipse cx="310" cy="210" rx="18" ry="15" fill="url(#cheekGrad)" opacity="0.6"/>
+
+  <!-- Eye -->
+  <circle cx="310" cy="180" r="16" fill="#1a1018"/>
+  <circle cx="314" cy="175" r="6" fill="#fff"/>
+  <circle cx="306" cy="183" r="3" fill="#fff" opacity="0.5"/>
+
+  <!-- Darwin's Finch distinctive beak (large, strong, curved) -->
+  <path d="M 345 192 L 400 200 Q 395 210 380 215 L 345 208 Z" fill="#444" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M 345 200 L 390 210 Q 385 218 375 222 L 345 213 Z" fill="#555" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Beak line -->
+  <line x1="345" y1="206" x2="395" y2="210" stroke="#333" stroke-width="1"/>
+
+  <!-- Musical note in beak -->
+  <g transform="translate(395, 185) rotate(-15)">
+    <ellipse cx="0" cy="0" rx="7" ry="5.5" fill="#e8a020" transform="rotate(-20)"/>
+    <line x1="6" y1="-1" x2="6" y2="-28" stroke="#e8a020" stroke-width="2"/>
+    <path d="M 6 -28 Q 16 -22 12 -16" stroke="#e8a020" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Feet -->
+  <g stroke="#666" stroke-width="2.5" stroke-linecap="round" fill="none">
+    <path d="M 240 385 L 230 410 L 215 420"/>
+    <path d="M 230 410 L 230 425"/>
+    <path d="M 230 410 L 245 422"/>
+    <path d="M 280 385 L 285 410 L 270 420"/>
+    <path d="M 285 410 L 285 425"/>
+    <path d="M 285 410 L 300 422"/>
+  </g>
+
+  <!-- Small floating notes around bird -->
+  <g fill="#e8a020" opacity="0.4">
+    <g transform="translate(130, 140) scale(0.7)">
+      <ellipse cx="0" cy="0" rx="6" ry="4.5" transform="rotate(-15)"/>
+      <line x1="5" y1="-1" x2="5" y2="-22" stroke="#e8a020" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(400, 300) scale(0.6)">
+      <ellipse cx="0" cy="0" rx="6" ry="4.5" transform="rotate(-15)"/>
+      <line x1="5" y1="-1" x2="5" y2="-22" stroke="#e8a020" stroke-width="1.5"/>
+      <path d="M 5 -22 Q 13 -17 10 -12" stroke="#e8a020" fill="none" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(110, 300) scale(0.5)">
+      <ellipse cx="0" cy="0" rx="6" ry="4.5" transform="rotate(-15)"/>
+      <line x1="5" y1="-1" x2="5" y2="-22" stroke="#e8a020" stroke-width="1.5"/>
+    </g>
+  </g>
+</svg>

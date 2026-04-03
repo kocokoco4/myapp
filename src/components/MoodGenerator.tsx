@@ -4,7 +4,6 @@ import { MOOD_CATEGORIES, generateTemplate, type MoodSelection, type MoodCategor
 import { gid } from '../utils/id'
 
 const CAT_KEYS: MoodCategory[] = ['emotion', 'scene', 'energy', 'relation']
-const CAT_ICONS: Record<MoodCategory, string> = { emotion: '💭', scene: '🌤', energy: '🎚', relation: '💌' }
 
 type Phase = 'select' | 'loading' | 'result'
 
@@ -43,7 +42,7 @@ export default function MoodGenerator() {
   const handleApply = useCallback(() => {
     if (!result) return
     updateSong(s => {
-      s.title = result.title
+      // タイトルは変更しない（ユーザーが自分で決める）
       s.key = result.key
       s.tempo = result.bpm
       s.memo = result.catchphrase ? result.catchphrase : s.memo
@@ -81,7 +80,7 @@ export default function MoodGenerator() {
               {CAT_KEYS.map(cat => (
                 <div key={cat}>
                   <label className="text-[10px] text-text2 font-mono mb-1 block">
-                    {CAT_ICONS[cat]} {MOOD_CATEGORIES[cat].label}
+                    {MOOD_CATEGORIES[cat].label}
                   </label>
                   <select
                     className="w-full bg-bg4 border border-border2 rounded-lg text-text px-2 py-1.5 text-xs outline-none font-sans focus:border-amber"
@@ -146,21 +145,16 @@ export default function MoodGenerator() {
         {/* ─── 結果表示 ─── */}
         {phase === 'result' && result && (
           <div className="space-y-3">
-            {/* 数式 → 結果 */}
-            <div className="bg-bg4 rounded-xl px-3 py-3 text-center">
-              <div className="flex items-center justify-center gap-1 flex-wrap text-[10px] font-mono text-text3 mb-2">
+            {/* 選択した雰囲気を大きく表示 */}
+            <div className="bg-bg4 rounded-xl px-4 py-4 text-center animate-fi">
+              <div className="flex items-center justify-center gap-2 flex-wrap leading-relaxed">
                 {CAT_KEYS.map((cat, i) => (
-                  <span key={cat} className="flex items-center gap-1">
-                    {i > 0 && <span className="text-amber">×</span>}
-                    <span>{mood[cat]}</span>
+                  <span key={cat} className="flex items-center gap-2">
+                    {i > 0 && <span className="text-amber font-bold">×</span>}
+                    <span className="text-text font-bold text-[15px] font-sans">{mood[cat]}</span>
                   </span>
                 ))}
-                <span className="text-amber ml-1">=</span>
               </div>
-              <div className="text-lg font-display font-bold text-text animate-fi">{result.title}</div>
-              {result.catchphrase && (
-                <div className="text-xs text-text2 mt-1 font-sans italic animate-fi">{result.catchphrase}</div>
-              )}
             </div>
 
             {/* パラメータ */}

@@ -2,32 +2,35 @@ import type { MelNote } from '../types'
 
 const SS = 8, SH = 4
 
-// ─── SVG path-based music symbols (no font dependency) ─── //
+// ─── SVG path-based music symbols ─── //
+// Source: Leland font (MuseScore, SIL Open Font License)
+// Converted from VexFlow glyph format to standard SVG path commands
 
-/** Treble clef SVG path, designed for a 32px-tall staff (4*SS). Origin at staff bottom-left. */
+/** Treble clef — Leland font glyph, scale 0.028 to fit 32px staff */
 function drawTrebleClef(x: number, staffTop: number, staffBot: number): string {
-  const h = staffBot - staffTop
-  const cx = x + 12, cy = staffTop + h * 0.5
-  const s = h / 32 // scale factor
-  // Simplified treble clef outline
-  return `<g transform="translate(${cx},${cy}) scale(${s})">
-    <path d="M 2,-22 C 2,-22 6,-18 6,-14 C 6,-10 2,-6 0,-2 C -2,2 -4,8 -4,12 C -4,18 0,20 4,20 C 8,20 10,16 10,12 C 10,8 6,6 4,8 C 2,10 4,12 6,12 C 6,10 8,8 8,12 C 8,16 6,18 4,18 C 0,18 -2,14 -2,10 C -2,6 0,0 2,-4 C 4,-8 6,-12 6,-16 C 6,-18 4,-20 2,-22 Z M 1,-22 L 1,22" fill="none" stroke="#333" stroke-width="1.8" stroke-linecap="round"/>
-    <line x1="1" y1="-22" x2="1" y2="24" stroke="#333" stroke-width="1.2"/>
+  const staffH = staffBot - staffTop
+  const s = staffH / 1200 // scale to staff
+  // Origin: G line (line 2 from bottom = staffTop + 3*SS)
+  const ox = x + 8
+  const oy = staffTop + 3 * SS
+  return `<g transform="translate(${ox},${oy}) scale(${s},${-s})">
+    <path d="M605,-297 C576,-302 549,-305 521,-305 C315,-305 140,-161 140,56 C140,232 264,389 390,498 C415,520 438,540 459,562 C472,484 482,416 492,357 C361,318 272,180 272,45 C272,-56 351,-194 467,-194 C478,-194 491,-189 491,-176 C491,-163 477,-156 459,-144 C403,-109 372,-72 372,-1 C372,86 436,157 521,177 Z M478,1184 C491,1241 557,1392 632,1392 C654,1392 688,1322 688,1223 C688,1073 577,960 478,863 C469,920 462,976 462,1037 C462,1090 467,1139 478,1184 Z M176,-739 C176,-834 249,-959 444,-959 C511,-959 570,-942 622,-910 C700,-855 720,-760 720,-670 C720,-613 711,-549 697,-467 C693,-438 684,-395 675,-338 C816,-292 922,-145 922,3 C922,220 768,367 557,367 C543,454 528,539 516,619 C668,779 773,959 773,1188 C773,1319 733,1426 710,1477 C675,1551 634,1601 608,1601 C598,1601 553,1584 505,1528 C413,1418 387,1234 387,1113 C387,1035 395,965 419,804 C418,802 343,726 312,701 C181,579 0,405 0,117 C0,-153 235,-364 503,-364 C544,-364 583,-360 616,-354 C644,-492 660,-593 660,-670 C660,-819 583,-899 438,-899 C403,-899 373,-891 370,-891 C369,-890 366,-888 366,-887 C366,-884 369,-883 373,-881 C441,-871 508,-814 508,-721 C508,-644 449,-562 341,-562 C240,-562 176,-644 176,-739 Z M809,-30 C716,186 809,98 809,-30 C809,-132 768,-238 665,-279 C635,-107 596,122 586,186 Z" fill="#333"/>
   </g>`
 }
 
-/** Bass clef SVG path */
+/** Bass clef — Leland font glyph */
 function drawBassClef(x: number, staffTop: number): string {
-  const cx = x + 10, cy = staffTop + SS * 1.5
-  return `<g>
-    <circle cx="${cx}" cy="${cy}" r="3" fill="#333"/>
-    <path d="M ${cx},${cy} C ${cx + 6},${cy - 4} ${cx + 10},${cy - 8} ${cx + 8},${cy - 14} C ${cx + 6},${cy - 18} ${cx - 2},${cy - 16} ${cx - 2},${cy - 12}" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="${cx + 14}" cy="${cy - 10}" r="1.5" fill="#333"/>
-    <circle cx="${cx + 14}" cy="${cy - 6}" r="1.5" fill="#333"/>
+  const s = (4 * SS) / 900
+  const ox = x + 6
+  const oy = staffTop + SS // F line (line 4 from bottom = staffTop + SS)
+  return `<g transform="translate(${ox},${oy}) scale(${s},${-s})">
+    <path d="M366,361 C256,361 168,298 167,298 C84,236 50,163 37,112 C30,86 27,60 27,36 C27,1 33,-30 46,-58 C63,-96 96,-124 140,-138 C157,-144 176,-147 194,-147 C226,-147 259,-138 287,-122 C331,-98 359,-46 359,10 C359,60 333,107 289,134 C259,154 230,160 206,160 C189,160 173,157 160,153 C145,147 121,132 109,122 C114,150 131,192 147,215 C163,238 194,266 219,279 C255,300 301,308 351,308 C498,308 570,190 570,-52 C570,-186 520,-314 477,-399 C429,-494 366,-585 310,-635 C160,-772 19,-837 17,-837 C17,-837 0,-847 0,-864 C0,-867 1,-868 1,-871 C6,-886 19,-888 27,-888 C29,-888 33,-887 35,-887 C36,-887 200,-819 331,-717 C405,-664 471,-606 528,-544 C580,-488 625,-428 661,-367 C724,-259 760,-147 760,-50 C760,69 729,168 670,239 C602,320 500,361 366,361 Z" fill="#333"/>
+    <circle cx="${(818 + 68) * s}" cy="${-179 * s}" r="${37 * s}" fill="#333"/>
+    <circle cx="${(818 + 68) * s}" cy="${177 * s}" r="${37 * s}" fill="#333"/>
   </g>`
 }
 
-/** Time signature numbers as SVG paths (no font) */
+/** Time signature numbers */
 function drawTimeSigNum(x: number, y: number, n: number): string {
   return `<text x="${x}" y="${y}" font-size="12" font-weight="bold" fill="#333" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">${n}</text>`
 }
@@ -254,7 +257,7 @@ function renderNotes(notes: MelNote[] | undefined, clef: string, mx: number, mw:
     s += drawAccidental(cx, pos, m[2] || null, color, sb)
     // Syllable text below the staff
     if (n.syllable && syllableY) {
-      s += `<text x="${cx}" y="${syllableY}" font-size="9" fill="#888" text-anchor="middle" font-family="'Noto Sans JP',sans-serif">${n.syllable}</text>`
+      s += `<text x="${cx}" y="${syllableY}" font-size="11" fill="#7c3aed" text-anchor="middle" font-weight="bold" font-family="'Noto Sans JP',sans-serif">${n.syllable}</text>`
     }
   }
   for (const g of beamGroups) s += drawBeamGroup(g, clef, mx, bw, sb, color)
@@ -332,7 +335,7 @@ export function singleStaffSVG(measures: StaffMeasure[], clef: string, color: st
   const extraAbove = maxPos > 8 ? (maxPos - 8) * SH + 20 : 0
   const extraBelow = minPos < 0 ? (-minPos) * SH + 10 : 0
   const CHORD_H = 16
-  const SYLLABLE_H = hasSyllables ? 16 : 0
+  const SYLLABLE_H = hasSyllables ? 20 : 0
   const PT = CHORD_H + extraAbove + 4
   const PB = Math.max(14, extraBelow + SYLLABLE_H)
   const staffTop = PT, staffBot = staffTop + 4 * SS, svgH = staffBot + PB

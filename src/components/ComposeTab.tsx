@@ -210,50 +210,62 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
           onCancel={() => setConfirmDelete(false)}
         />
       )}
-      {/* Section header */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-bg3 border-b border-border flex-wrap">
-        <input
-          className="bg-transparent border-none text-amber font-bold text-[13px] outline-none font-display flex-1 min-w-0"
-          value={sec.name}
-          onChange={e => saveOnly(s => { s.sections[si].name = e.target.value })}
-        />
-        <button
-          className={`text-[11px] px-2 py-1 rounded-md font-mono border transition-colors
-            ${playing
-              ? 'bg-teal/15 border-teal text-teal'
-              : 'bg-transparent text-text3 border border-border2 hover:border-teal hover:text-teal'}`}
-          onClick={handlePlay}
-        >
-          {playing ? '■ 停止' : '▶ 再生'}
-        </button>
-        <div className="flex gap-1">
+      {/* Section header — row 1: name + play + delete */}
+      <div className="px-4 pt-3 pb-1 bg-bg3 border-b border-border">
+        <div className="flex items-center gap-2 mb-2">
+          <input
+            className="bg-transparent border-none text-amber font-bold text-[13px] outline-none font-display flex-1 min-w-0"
+            value={sec.name}
+            onChange={e => saveOnly(s => { s.sections[si].name = e.target.value })}
+          />
+          <button
+            className={`text-[12px] px-3 py-1.5 rounded-md font-sans border transition-colors
+              ${playing
+                ? 'bg-teal/15 border-teal text-teal'
+                : 'bg-transparent text-text3 border border-border2 hover:border-teal hover:text-teal'}`}
+            onClick={handlePlay}
+          >
+            {playing ? '停止' : '再生'}
+          </button>
+          {canDelete && (
+            <button
+              className="px-2 py-1.5 border border-border2 rounded-md text-text3 cursor-pointer text-[12px] hover:text-coral hover:border-coral bg-transparent font-sans"
+              onClick={() => setConfirmDelete(true)}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {/* Row 2: area toggles + measure buttons */}
+        <div className="flex items-center gap-1.5 pb-2">
           {AREA_TABS.map(a => (
             <button
               key={a.id}
-              className={`text-[10px] px-2 py-1 rounded-md font-mono transition-colors
+              className={`text-[11px] px-2 py-1 rounded-md font-sans transition-colors
                 ${openAreas[a.id]
                   ? 'bg-amber/15 text-amber border border-amber/40'
-                  : 'bg-transparent text-text3 border border-transparent hover:text-text2'}`}
+                  : 'bg-transparent text-text3 border border-border2 hover:text-text2'}`}
               onClick={() => toggleArea(a.id)}
             >
               {a.label}
             </button>
           ))}
-        </div>
-        <button
-          className="text-[10px] px-2 py-1 border border-border2 rounded-md text-text2 bg-transparent hover:border-amber hover:text-amber font-sans"
-          onClick={() => updateSong(s => s.sections[si].measures.push({ id: gid(), chord: '', melNotes: [] }))}
-        >
-          +小節
-        </button>
-        {canDelete && (
+          <span className="flex-1" />
           <button
-            className="bg-transparent border-none text-text3 cursor-pointer text-sm hover:text-coral"
-            onClick={() => setConfirmDelete(true)}
+            className="text-[11px] px-2 py-1 border border-border2 rounded-md text-text2 bg-transparent hover:border-amber hover:text-amber font-sans"
+            onClick={() => updateSong(s => s.sections[si].measures.push({ id: gid(), chord: '', melNotes: [] }))}
           >
-            x
+            +小節
           </button>
-        )}
+          {sec.measures.length > 1 && (
+            <button
+              className="text-[11px] px-2 py-1 border border-border2 rounded-md text-text3 bg-transparent hover:border-coral hover:text-coral font-sans"
+              onClick={() => updateSong(s => { if (s.sections[si].measures.length > 1) s.sections[si].measures.pop() })}
+            >
+              -小節
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="p-4 space-y-4">
@@ -504,11 +516,37 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
                               x
                             </span>
                           </div>
-                          {n.syllable && (
-                            <span className={`text-[11px] font-sans transition-colors ${isHighlighted ? 'text-amber font-bold' : 'text-text3'}`}>
-                              {n.syllable}
-                            </span>
-                          )}
+                          <span
+                            className={`text-[11px] font-sans transition-colors cursor-pointer min-w-[16px] text-center
+                              ${isHighlighted ? 'text-amber font-bold' : n.syllable ? 'text-purple' : 'text-text3/30'}`}
+                            onClick={e => {
+                              e.stopPropagation()
+                              const current = n.syllable || ''
+                              const el = e.currentTarget
+                              el.contentEditable = 'true'
+                              el.textContent = current
+                              el.focus()
+                              // Select all text
+                              const range = document.createRange()
+                              range.selectNodeContents(el)
+                              window.getSelection()?.removeAllRanges()
+                              window.getSelection()?.addRange(range)
+                              const save = () => {
+                                const val = el.textContent?.trim() || ''
+                                el.contentEditable = 'false'
+                                updateSong(s => {
+                                  const note = s.sections[si].measures[mi].melNotes[ni]
+                                  if (note) note.syllable = val || undefined
+                                })
+                              }
+                              el.onblur = save
+                              el.onkeydown = (ev: KeyboardEvent) => {
+                                if (ev.key === 'Enter') { ev.preventDefault(); el.blur() }
+                              }
+                            }}
+                          >
+                            {n.syllable || (n.pitch !== 'R' ? '·' : '')}
+                          </span>
                         </div>
                       )
                     })}
@@ -521,28 +559,6 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
                   </div>
                 </div>
               ))}
-            </div>
-
-            {/* Add/remove measure */}
-            <div className="flex gap-1.5">
-              <button
-                className="text-[10px] px-2.5 py-1 border border-border2 rounded-lg text-text2 bg-transparent hover:border-amber hover:text-amber font-sans"
-                onClick={() => updateSong(s => s.sections[si].measures.push({
-                  id: gid(),
-                  chord: s.sections[si].measures[s.sections[si].measures.length - 1]?.chord || '',
-                  melNotes: [],
-                }))}
-              >
-                + 小節
-              </button>
-              {sec.measures.length > 1 && (
-                <button
-                  className="text-[10px] px-2.5 py-1 border border-border2 rounded-lg text-text2 bg-transparent hover:border-amber hover:text-amber font-sans"
-                  onClick={() => updateSong(s => { if (s.sections[si].measures.length > 1) s.sections[si].measures.pop() })}
-                >
-                  - 小節
-                </button>
-              )}
             </div>
 
             {/* Note picker — center modal overlay */}

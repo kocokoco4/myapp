@@ -6,6 +6,7 @@ import type { Song, TabId, ChatMessage } from './types'
 import { DEFAULT_SECTIONS, CONFIG } from './constants'
 import { gid } from './utils/id'
 import { getUserPlan, getTodayUsage, type PlanId } from './utils/plan'
+import FinchAvatar from './components/FinchAvatar'
 
 // [ZooLab連携ポイント] データ管理は Firestore 経由
 // 将来: POST /api/zoolab/kyokucho/songs
@@ -323,7 +324,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return (
       <div className="h-screen flex items-center justify-center bg-bg">
         <div className="text-center">
-          <div className="text-2xl mb-3 animate-pulse font-display font-bold text-amber">曲帳</div>
+          <div className="mb-3"><FinchAvatar size={56} mood="thinking" /></div>
           <div className="text-text2 text-sm font-mono">読み込み中...</div>
         </div>
       </div>

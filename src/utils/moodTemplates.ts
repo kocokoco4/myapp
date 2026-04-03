@@ -129,12 +129,22 @@ export function generateTemplate(mood: MoodSelection): TemplateParams {
   const baseVerse = pickRandom(progPool).map(c => applyFlavor(c, flavor))
   const baseChorus = pickRandom(progPool).map(c => applyFlavor(c, flavor))
 
-  // セクション構成
+  // Bメロ用（コーラスのバリエーション）
+  const bMelChords = baseChorus.map(c => c.replace('m7', 'm').replace('M7', ''))
+  // 間奏用（Aメロのバリエーション）
+  const interlude = baseVerse.slice(0, 2)
+
+  // セクション構成 — J-POP標準の1曲構成
   const sections = [
     { name: 'イントロ', chords: baseVerse },
     { name: 'Aメロ', chords: [...baseVerse, ...baseVerse] },
-    { name: 'Bメロ', chords: baseChorus.map(c => c.replace('m7', 'm').replace('M7', '')) },
+    { name: 'Bメロ', chords: [...bMelChords, ...bMelChords] },
     { name: 'サビ', chords: [...baseChorus, ...baseChorus] },
+    { name: '間奏', chords: interlude },
+    { name: 'Aメロ2', chords: [...baseVerse, ...baseVerse] },
+    { name: 'Bメロ2', chords: [...bMelChords, ...bMelChords] },
+    { name: 'ラスサビ', chords: [...baseChorus, ...baseChorus, ...baseChorus] },
+    { name: 'アウトロ', chords: baseVerse },
   ]
 
   // スタイル（Geminiに渡すヒント）
