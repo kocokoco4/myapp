@@ -82,26 +82,48 @@ function ledger(cx: number, pos: number, sb: number): string {
   return s
 }
 
+/** Strip dotted prefix for base duration type */
+function baseDur(dur: string): string {
+  if (dur === 'dh') return 'h'
+  if (dur === 'dq') return 'q'
+  if (dur === 'd8') return '8'
+  return dur
+}
+function isDotted(dur: string): boolean { return dur === 'dh' || dur === 'dq' || dur === 'd8' }
+
 function drawNoteHead(cx: number, pos: number, dur: string, color: string, sb: number): string {
   const y = pY(pos, sb)
-  const filled = dur !== 'w' && dur !== 'h'
+  const bd = baseDur(dur)
+  const filled = bd !== 'w' && bd !== 'h'
   let s = ledger(cx, pos, sb)
-  if (dur === 'w') s += `<ellipse cx="${cx}" cy="${y}" rx="5.5" ry="4" fill="none" stroke="${color}" stroke-width="1.6" transform="rotate(-10,${cx},${y})"/>`
+  if (bd === 'w') s += `<ellipse cx="${cx}" cy="${y}" rx="5.5" ry="4" fill="none" stroke="${color}" stroke-width="1.6" transform="rotate(-10,${cx},${y})"/>`
   else if (!filled) s += `<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="white" stroke="${color}" stroke-width="1.5" transform="rotate(-10,${cx},${y})"/>`
   else s += `<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="${color}" transform="rotate(-10,${cx},${y})"/>`
 
-  if (dur !== 'w') {
+  // Dotted: add dot to the right of note head
+  if (isDotted(dur)) {
+    s += `<circle cx="${cx + 8}" cy="${y - (pos % 2 === 0 ? 3 : 0)}" r="1.5" fill="${color}"/>`
+  }
+
+  if (bd !== 'w') {
     const up = pos < 4
     const sx = up ? cx + 5 : cx - 5
     const sy1 = y + (up ? -1 : 1)
     const sy2 = calcStemEnd(pos, y, sb)
     s += sLine(sx, sy1, sx, sy2, color, 1.2)
-    if (dur === '8') s += up
-      ? `<path d="M ${sx} ${sy2} q 8 4 4 14" stroke="${color}" fill="none" stroke-width="1.3" stroke-linecap="round"/>`
-      : `<path d="M ${sx} ${sy2} q 8 -4 4 -14" stroke="${color}" fill="none" stroke-width="1.3" stroke-linecap="round"/>`
-    if (dur === '16') s += up
-      ? `<path d="M ${sx} ${sy2} q 8 4 4 12" stroke="${color}" fill="none" stroke-width="1.3" stroke-linecap="round"/><path d="M ${sx} ${sy2 + 6} q 8 4 4 12" stroke="${color}" fill="none" stroke-width="1.3" stroke-linecap="round"/>`
-      : `<path d="M ${sx} ${sy2} q 8 -4 4 -12" stroke="${color}" fill="none" stroke-width="1.3" stroke-linecap="round"/><path d="M ${sx} ${sy2 - 6} q 8 -4 4 -12" stroke="${color}" fill="none" stroke-width="1.3" stroke-linecap="round"/>`
+    const flag = (d: string) => {
+      if (d === '8' || d === 'd8') return 1
+      if (d === '16') return 2
+      if (d === '32') return 3
+      return 0
+    }
+    const nFlags = flag(bd === 'd8' ? '8' : dur)
+    for (let fi = 0; fi < nFlags; fi++) {
+      const offset = fi * 6
+      s += up
+        ? `<path d="M ${sx} ${sy2 + offset} q 8 4 4 12" stroke="${color}" fill="none" stroke-width="1.3" stroke-linecap="round"/>`
+        : `<path d="M ${sx} ${sy2 - offset} q 8 -4 4 -12" stroke="${color}" fill="none" stroke-width="1.3" stroke-linecap="round"/>`
+    }
   }
   return s
 }
@@ -155,11 +177,13 @@ function drawRest(cx: number, dur: string, sb: number): string {
 
 function drawNoteHeadOnly(cx: number, pos: number, dur: string, color: string, sb: number): string {
   const y = pY(pos, sb)
-  const filled = dur !== 'w' && dur !== 'h'
+  const bd = baseDur(dur)
+  const filled = bd !== 'w' && bd !== 'h'
   let s = ledger(cx, pos, sb)
-  if (dur === 'w') s += `<ellipse cx="${cx}" cy="${y}" rx="5.5" ry="4" fill="none" stroke="${color}" stroke-width="1.6" transform="rotate(-10,${cx},${y})"/>`
+  if (bd === 'w') s += `<ellipse cx="${cx}" cy="${y}" rx="5.5" ry="4" fill="none" stroke="${color}" stroke-width="1.6" transform="rotate(-10,${cx},${y})"/>`
   else if (!filled) s += `<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="white" stroke="${color}" stroke-width="1.5" transform="rotate(-10,${cx},${y})"/>`
   else s += `<ellipse cx="${cx}" cy="${y}" rx="5" ry="3.8" fill="${color}" transform="rotate(-10,${cx},${y})"/>`
+  if (isDotted(dur)) s += `<circle cx="${cx + 8}" cy="${y - (pos % 2 === 0 ? 3 : 0)}" r="1.5" fill="${color}"/>`
   return s
 }
 
@@ -173,7 +197,7 @@ function drawBeamGroup(group: MelNote[], clef: string, mx: number, bw: number, s
   const up = avgPos < 4
   const midY = pY(4, sb)
   const noteData = group.map((n, i) => {
-    const cx = mx + (n.startBeat || 0) * bw + bw * 0.55
+    const cx = mx + (n.startBeat || 0) * bw + bw * 0.3
     const pos = positions[i]
     const y = pY(pos, sb)
     const sx = up ? cx + 5 : cx - 5
@@ -247,7 +271,7 @@ function renderNotes(notes: MelNote[] | undefined, clef: string, mx: number, mw:
 
   for (const n of sorted) {
     const isR = n.pitch === 'R'
-    const cx = mx + (n.startBeat || 0) * bw + bw * 0.55
+    const cx = mx + (n.startBeat || 0) * bw + bw * 0.3
     if (isR) { s += drawRest(cx, n.duration || 'q', sb); continue }
     const m = n.pitch.match(/^([A-G])(#|b)?(\d)$/)
     if (!m) continue
@@ -275,8 +299,8 @@ function renderNotes(notes: MelNote[] | undefined, clef: string, mx: number, mw:
       for (let gi = 0; gi < tripNotes.length; gi += 3) {
         const grp = tripNotes.slice(gi, Math.min(gi + 3, tripNotes.length))
         if (grp.length < 2) continue
-        const x1 = mx + (grp[0].startBeat || 0) * bw + bw * 0.55
-        const x2 = mx + (grp[grp.length - 1].startBeat || 0) * bw + bw * 0.55
+        const x1 = mx + (grp[0].startBeat || 0) * bw + bw * 0.3
+        const x2 = mx + (grp[grp.length - 1].startBeat || 0) * bw + bw * 0.3
         // Position bracket above or below based on average pitch
         const positions = grp.filter(gn => gn.pitch !== 'R').map(gn => pitchPos(gn.pitch, clef))
         if (positions.length === 0) continue

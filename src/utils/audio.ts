@@ -17,8 +17,17 @@ let actx: AudioContext | null = null
 
 function getCtx(): AudioContext {
   if (!actx) actx = new AudioContext()
-  if (actx.state === 'suspended') actx.resume()
+  if (actx.state === 'suspended') {
+    // Fire and forget — but also try synchronous resume for immediate playback
+    actx.resume().catch(() => {})
+  }
   return actx
+}
+
+/** Ensure AudioContext is ready (call before playback after user gesture) */
+export async function ensureAudioReady(): Promise<void> {
+  const ctx = getCtx()
+  if (ctx.state === 'suspended') await ctx.resume()
 }
 
 export function parseChord(name: string): string[] {

@@ -44,16 +44,22 @@ export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A',
 export const OCTAVES = [3, 4, 5]
 
 export const DURATIONS = [
-  { value: 'w', label: '𝅝 全音符', beats: 4 },
+  { value: 'w', label: '𝅝 全', beats: 4 },
+  { value: 'dh', label: '𝅗𝅥· 付2分', beats: 3 },
   { value: 'h', label: '𝅗𝅥 2分', beats: 2 },
+  { value: 'dq', label: '♩· 付4分', beats: 1.5 },
   { value: 'q', label: '♩ 4分', beats: 1 },
+  { value: 'd8', label: '♪· 付8分', beats: 0.75 },
   { value: '8', label: '♪ 8分', beats: 0.5 },
   { value: '16', label: '♬ 16分', beats: 0.25 },
+  { value: '32', label: '𝅘𝅥𝅰 32分', beats: 0.125 },
   { value: 'tq', label: '3連♩', beats: 2 / 3 },
   { value: 't8', label: '3連♪', beats: 1 / 3 },
 ]
 
-export const DURATION_BEATS: Record<string, number> = { w: 4, h: 2, q: 1, '8': 0.5, '16': 0.25, tq: 2 / 3, t8: 1 / 3 }
+export const DURATION_BEATS: Record<string, number> = {
+  w: 4, dh: 3, h: 2, dq: 1.5, q: 1, d8: 0.75, '8': 0.5, '16': 0.25, '32': 0.125, tq: 2 / 3, t8: 1 / 3,
+}
 
 export const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11]
 
@@ -78,6 +84,7 @@ export const TABS: TabDef[] = [
   { id: 'compose', label: '制作', icon: '' },
   { id: 'arrange', label: '伴奏・スコア', icon: '' },
   { id: 'ai', label: 'AI相談', icon: '' },
+  { id: 'dict', label: '辞典', icon: '' },
 ]
 
 export const AI_SUGGESTIONS = [

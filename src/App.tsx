@@ -11,6 +11,7 @@ import SettingsModal from './components/SettingsModal'
 import ComposeTab from './components/ComposeTab'
 import ArrangeTab from './components/ArrangeTab'
 import AIChat from './components/AIChat'
+import DictTab from './components/DictTab'
 
 function AppContent() {
   const { user, currentSong, curTab, addSong } = useStore()
@@ -28,6 +29,7 @@ function AppContent() {
       case 'compose': return <ComposeTab />
       case 'arrange': return <ArrangeTab onOpenSettings={openSettings} />
       case 'ai': return <AIChat onOpenSettings={openSettings} />
+      case 'dict': return <DictTab />
     }
   }
 

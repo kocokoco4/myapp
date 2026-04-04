@@ -75,7 +75,7 @@ export interface Song {
   updatedAt: number
 }
 
-export type TabId = 'compose' | 'arrange' | 'ai'
+export type TabId = 'compose' | 'arrange' | 'ai' | 'dict'
 
 export interface TabDef {
   id: TabId

@@ -75,7 +75,7 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
 
   const scaleNotes = getScaleNotes(songKey)
 
-  const handlePlay = useCallback(() => {
+  const handlePlay = useCallback(async () => {
     if (stopRef.current) {
       stopRef.current.stop(); stopRef.current = null; setPlaying(false); setPlayingNoteKey(null)
       highlightTimers.current.forEach(t => clearTimeout(t)); highlightTimers.current = []
@@ -84,6 +84,8 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
     const hasChords = sec.measures.some(m => !!m.chord)
     const hasMelody = sec.measures.some(m => m.melNotes?.some(n => n.pitch !== 'R'))
     if (!hasChords && !hasMelody) return
+    // Ensure AudioContext is resumed (iOS requires user gesture)
+    try { const ctx = new AudioContext(); if (ctx.state === 'suspended') await ctx.resume(); ctx.close() } catch {}
     const bpm = beatsPerMeasure(song.timeSig)
     const result = playSectionAudio(sec.measures, song.tempo, bpm)
     stopRef.current = result
