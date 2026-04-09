@@ -12,9 +12,10 @@ import ComposeTab from './components/ComposeTab'
 import ArrangeTab from './components/ArrangeTab'
 import AIChat from './components/AIChat'
 import DictTab from './components/DictTab'
+import BeginnerCompose from './components/BeginnerCompose'
 
 function AppContent() {
-  const { user, currentSong, curTab, addSong } = useStore()
+  const { user, currentSong, curTab, addSong, level } = useStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const song = currentSong()
@@ -26,7 +27,7 @@ function AppContent() {
 
   const renderTab = () => {
     switch (curTab) {
-      case 'compose': return <ComposeTab />
+      case 'compose': return level === 'beginner' ? <BeginnerCompose /> : <ComposeTab />
       case 'arrange': return <ArrangeTab onOpenSettings={openSettings} />
       case 'ai': return <AIChat onOpenSettings={openSettings} />
       case 'dict': return <DictTab />

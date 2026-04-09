@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function SettingsModal({ open, onClose }: Props) {
-  const { user, songs, toast, plan, usage, theme, toggleTheme } = useStore()
+  const { user, songs, toast, plan, setPlan, level, setLevel, usage, theme, toggleTheme } = useStore()
   const { lang, setLang, t } = useI18n()
   const [keyInput, setKeyInput] = useState('')
   const [planOpen, setPlanOpen] = useState(false)
@@ -110,6 +110,41 @@ export default function SettingsModal({ open, onClose }: Props) {
         </button>
 
         {showAdvanced && <>
+        {/* Dev: Level & Plan override */}
+        <div className="bg-bg4 border border-border2 rounded-[10px] p-3.5 mb-3.5">
+          <div className="text-[11px] font-bold text-coral font-mono mb-2">DEV: レベル＆プラン切替</div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] text-text font-sans">レベル</span>
+            <div className="flex gap-1">
+              {([['beginner', 'はじめて'], ['intermediate', 'なれてきた'], ['advanced', 'じゆうに']] as const).map(([lv, label]) => (
+                <button
+                  key={lv}
+                  className={`px-2 py-1 rounded text-[11px] font-mono border
+                    ${level === lv ? 'bg-amber/15 border-amber text-amber' : 'bg-transparent border-border2 text-text3 hover:border-amber'}`}
+                  onClick={() => setLevel(lv)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-text font-sans">プラン</span>
+            <div className="flex gap-1">
+              {([['free', '無料'], ['standard', 'STD'], ['premium', 'PRE']] as const).map(([pl, label]) => (
+                <button
+                  key={pl}
+                  className={`px-2 py-1 rounded text-[11px] font-mono border
+                    ${plan === pl ? 'bg-teal/15 border-teal text-teal' : 'bg-transparent border-border2 text-text3 hover:border-teal'}`}
+                  onClick={() => setPlan(pl)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Data import */}
         <div className="bg-bg4 border border-border2 rounded-[10px] p-3.5 mb-3.5">
           <div className="text-[11px] font-bold text-green font-mono mb-2">データ移行・バックアップ</div>

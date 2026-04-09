@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import { onAuthStateChanged, type User } from 'firebase/auth'
 import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import { auth, db } from './firebase'
-import type { Song, TabId, ChatMessage } from './types'
+import type { Song, TabId, ChatMessage, UserLevel } from './types'
 import { DEFAULT_SECTIONS, CONFIG } from './constants'
 import { gid } from './utils/id'
 import { getUserPlan, getTodayUsage, type PlanId } from './utils/plan'
@@ -119,6 +119,9 @@ interface StoreContextType {
   aiHist: ChatMessage[]
   theme: string
   plan: PlanId
+  level: UserLevel
+  setPlan: (p: PlanId) => void
+  setLevel: (l: UserLevel) => void
   usage: { proposals: number; accompGen: number }
   refreshUsage: () => void
   currentSong: () => Song | undefined
@@ -143,7 +146,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [curTab, setCurTab] = useState<TabId>('compose')
   const [aiHist, setAiHist] = useState<ChatMessage[]>([])
   const [theme, setTheme] = useState(() => localStorage.getItem(CONFIG.THEME_KEY) || 'dark')
-  const [plan, setPlan] = useState<PlanId>('free')
+  const [plan, setPlanState] = useState<PlanId>('free')
+  const [level, setLevelState] = useState<UserLevel>(() => (localStorage.getItem('kch_level') as UserLevel) || 'advanced')
   const [usage, setUsage] = useState({ proposals: 0, accompGen: 0 })
 
   // Auth state listener
@@ -206,7 +210,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       // Load plan & usage
       if (user) {
-        getUserPlan(user.uid).then(p => setPlan(p)).catch(() => {})
+        getUserPlan(user.uid).then(p => setPlanState(p)).catch(() => {})
+        // Load level from Firestore
+        getDoc(doc(db, 'users', user.uid)).then(snap => {
+          const l = snap.data()?.level as UserLevel | undefined
+          if (l) { setLevelState(l); localStorage.setItem('kch_level', l) }
+        }).catch(() => {})
         getTodayUsage(user.uid).then(u => setUsage(u)).catch(() => {})
       }
     }
@@ -306,6 +315,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setTheme(t => t === 'dark' ? 'light' : 'dark')
   }, [])
 
+  const setPlan = useCallback((p: PlanId) => {
+    setPlanState(p)
+    const u = auth.currentUser
+    if (u) setDoc(doc(db, 'users', u.uid), { plan: p }, { merge: true }).catch(() => {})
+  }, [])
+
+  const setLevel = useCallback((l: UserLevel) => {
+    setLevelState(l)
+    localStorage.setItem('kch_level', l)
+    const u = auth.currentUser
+    if (u) setDoc(doc(db, 'users', u.uid), { level: l }, { merge: true }).catch(() => {})
+  }, [])
+
   const refreshUsage = useCallback(() => {
     const u = auth.currentUser
     if (u) getTodayUsage(u.uid).then(setUsage).catch(() => {})
@@ -335,7 +357,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     <StoreContext.Provider value={{
       user, authLoading,
       songs: data.songs, curId: data.curId, curTab, aiHist, theme,
-      plan, usage, refreshUsage,
+      plan, level, setPlan, setLevel, usage, refreshUsage,
       currentSong, addSong, deleteSong, selectSong, updateSong, saveOnly,
       switchTab, setAiHist, toggleTheme, toast,
     }}>

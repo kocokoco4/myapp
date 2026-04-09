@@ -77,6 +77,8 @@ export interface Song {
 
 export type TabId = 'compose' | 'arrange' | 'ai' | 'dict'
 
+export type UserLevel = 'beginner' | 'intermediate' | 'advanced'
+
 export interface CustomProgression {
   id: string
   name: string
