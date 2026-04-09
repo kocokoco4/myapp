@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store'
+import { useI18n } from '../i18n'
 import { INSTRUMENTS } from '../constants'
 import { callGemini, getGeminiKey } from '../utils/gemini'
 import { exportMusicXML } from '../utils/musicxml'
@@ -14,6 +15,7 @@ type SubView = 'accomp' | 'chart'
 
 export default function ArrangeTab({ onOpenSettings }: Props) {
   const { currentSong, updateSong, toast } = useStore()
+  const { t } = useI18n()
   const [generating, setGenerating] = useState(false)
   const [subView, setSubView] = useState<SubView>('accomp')
   const song = currentSong()
@@ -78,14 +80,14 @@ export default function ArrangeTab({ onOpenSettings }: Props) {
             ${subView === 'accomp' ? 'bg-bg4 text-amber font-bold' : 'bg-transparent text-text2 hover:text-text'}`}
           onClick={() => setSubView('accomp')}
         >
-          伴奏譜面
+          {t('arrange.accomp')}
         </button>
         <button
           className={`text-[12px] px-3.5 py-1.5 rounded-md font-sans transition-colors
             ${subView === 'chart' ? 'bg-bg4 text-amber font-bold' : 'bg-transparent text-text2 hover:text-text'}`}
           onClick={() => setSubView('chart')}
         >
-          コードチャート
+          {t('arrange.chart')}
         </button>
       </div>
 
@@ -93,7 +95,7 @@ export default function ArrangeTab({ onOpenSettings }: Props) {
         <>
           {/* Instrument selection */}
           <div className="mb-3">
-            <label className="text-[10px] text-text2 font-bold block mb-1 font-mono tracking-wider">楽器を選択</label>
+            <label className="text-[10px] text-text2 font-bold block mb-1 font-mono tracking-wider">{t('arrange.instruments')}</label>
             <div className="flex gap-1.5 flex-wrap">
               {Object.entries(INSTRUMENTS).map(([k, v]) => {
                 const on = (song.selInstrs || []).includes(k)
@@ -122,21 +124,21 @@ export default function ArrangeTab({ onOpenSettings }: Props) {
               onClick={generateAccomp}
               disabled={generating}
             >
-              {generating ? '生成中...' : '伴奏を生成'}
+              {generating ? t('arrange.generating') : t('arrange.generate')}
             </button>
             {ac && (
               <>
                 <button
                   className="px-4 py-2 bg-teal text-bg rounded-lg font-bold text-xs cursor-pointer border-none"
-                  onClick={() => { exportMusicXML(song); toast('MusicXMLをダウンロード。LogicProで開いてください') }}
+                  onClick={() => { exportMusicXML(song); toast(t('arrange.musicxmlHint')) }}
                 >
-                  MusicXML出力
+                  {t('arrange.musicxml')}
                 </button>
                 <button
                   className="px-4 py-2 bg-amber text-bg rounded-lg font-bold text-xs cursor-pointer border-none"
-                  onClick={() => { downloadMidi(song); toast('MIDIをダウンロード。GarageBandで開いてください') }}
+                  onClick={() => { downloadMidi(song); toast(t('arrange.midiHint')) }}
                 >
-                  MIDI出力
+                  {t('arrange.midi')}
                 </button>
               </>
             )}

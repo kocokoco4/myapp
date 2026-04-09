@@ -15,7 +15,7 @@ interface Props {
 
 export default function SettingsModal({ open, onClose }: Props) {
   const { user, songs, toast, plan, usage, theme, toggleTheme } = useStore()
-  const { lang, setLang } = useI18n()
+  const { lang, setLang, t } = useI18n()
   const [keyInput, setKeyInput] = useState('')
   const [planOpen, setPlanOpen] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -29,7 +29,7 @@ export default function SettingsModal({ open, onClose }: Props) {
     const v = keyInput.trim()
     if (v && !v.startsWith('●')) {
       setGeminiKey(v)
-      toast('Gemini APIキーを保存しました')
+      toast(t('settings.save'))
     }
     onClose()
   }
@@ -97,7 +97,7 @@ export default function SettingsModal({ open, onClose }: Props) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
-          <span className="font-display text-base font-extrabold text-amber">設定</span>
+          <span className="font-display text-base font-extrabold text-amber">{t('settings.title')}</span>
           <button className="bg-transparent border-none text-text2 cursor-pointer text-lg p-1" onClick={onClose}>✕</button>
         </div>
 
@@ -239,7 +239,7 @@ export default function SettingsModal({ open, onClose }: Props) {
             className="w-full py-2 mb-3 border border-border2 rounded-lg text-[11px] text-text3 bg-transparent hover:border-coral hover:text-coral font-sans"
             onClick={() => { import('firebase/auth').then(m => m.signOut(auth)); onClose() }}
           >
-            ログアウト
+            {t('sidebar.logout')}
           </button>
         )}
 

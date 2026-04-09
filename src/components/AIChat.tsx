@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../store'
 import { AI_SUGGESTIONS } from '../constants'
 import { callGemini, getGeminiKey } from '../utils/gemini'
+import { useI18n } from '../i18n'
 import FinchAvatar from './FinchAvatar'
 
 interface Props {
@@ -19,6 +20,7 @@ const HELP_SUGGESTIONS = [
 
 export default function AIChat({ onOpenSettings }: Props) {
   const { currentSong, aiHist, setAiHist } = useStore()
+  const { t } = useI18n()
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [mode, setMode] = useState<ChatMode>('compose')
@@ -71,12 +73,12 @@ export default function AIChat({ onOpenSettings }: Props) {
     <div className="animate-fi flex flex-col h-[calc(100vh-175px)]">
       {!hasKey && (
         <div className="bg-amber/[0.08] border border-amber/30 rounded-[10px] px-3.5 py-3 mb-3 text-xs text-amber">
-          ⚠️ AIを使うにはGemini APIキーが必要です。
+          {t('ai.noKey')}
           <button
             className="ml-2.5 px-2.5 py-1 bg-amber text-bg rounded-lg text-[11px] font-bold cursor-pointer border-none"
             onClick={onOpenSettings}
           >
-            設定を開く
+            {t('settings.title')}
           </button>
         </div>
       )}
@@ -145,7 +147,7 @@ export default function AIChat({ onOpenSettings }: Props) {
         <div className="flex gap-2">
           <input
             className="flex-1 bg-bg4 border border-border2 rounded-3xl text-text px-4 py-2.5 text-base outline-none font-sans focus:border-amber"
-            placeholder="コード、アレンジ、メロディなど..."
+            placeholder={t('ai.placeholder')}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
@@ -155,7 +157,7 @@ export default function AIChat({ onOpenSettings }: Props) {
             onClick={() => send()}
             disabled={sending}
           >
-            送信
+            {t('ai.send')}
           </button>
         </div>
       </div>
