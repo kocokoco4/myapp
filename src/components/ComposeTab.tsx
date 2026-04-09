@@ -6,6 +6,8 @@ import { melodyStaffSVG } from '../utils/staff'
 import { gid } from '../utils/id'
 import { createPitchDetector, type PitchDetector } from '../utils/pitchDetect'
 import { useI18n } from '../i18n'
+import { getCustomProgressions, saveCustomProgression } from '../utils/customDict'
+import type { CustomProgression } from '../types'
 import MoodGenerator from './MoodGenerator'
 
 /* ─────────────── セクション内 サブエリア切替 ─────────────── */
@@ -56,6 +58,7 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
   const sec = song.sections[si]
 
   const [openAreas, setOpenAreas] = useState<Record<Area, boolean>>({ lyrics: true, chords: true, melody: false })
+  const [myProgs, setMyProgs] = useState<CustomProgression[]>([])
   const [chordPicker, setChordPicker] = useState<number | null>(null)
   const [chordSlot, setChordSlot] = useState<number>(0) // 0=前半, 1=後半
   const [notePicker, setNotePicker] = useState<number | null>(null)
@@ -135,6 +138,9 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
     })
     toast(`${si2}音にシラブルを割当しました`)
   }, [sec.lyrics, si, updateSong, toast])
+
+  // Load custom progressions
+  useEffect(() => { getCustomProgressions().then(setMyProgs) }, [])
 
   // Close pickers on outside click
   useEffect(() => {
@@ -352,6 +358,41 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
                   {p.label}
                 </button>
               ))}
+              {/* My progressions */}
+              {myProgs.map(p => (
+                <button
+                  key={p.id}
+                  className="text-[10px] px-2 py-1 bg-amber/5 border border-amber/30 rounded-full text-amber cursor-pointer font-sans hover:bg-amber/15"
+                  onClick={() => updateSong(s => {
+                    s.sections[si].measures = p.chords.map((c, i) => ({
+                      ...s.sections[si].measures[i],
+                      id: s.sections[si].measures[i]?.id || gid(),
+                      chord: c,
+                      melNotes: s.sections[si].measures[i]?.melNotes || [],
+                    }))
+                  })}
+                >
+                  {p.name}
+                </button>
+              ))}
+              {/* Save current progression */}
+              {sec.measures.some(m => m.chord) && (
+                <button
+                  className="text-[10px] px-2 py-1 bg-transparent border border-dashed border-teal/40 rounded-full text-teal cursor-pointer font-sans hover:bg-teal/10"
+                  onClick={async () => {
+                    const chords = sec.measures.map(m => m.chord).filter(Boolean)
+                    if (chords.length === 0) return
+                    const name = prompt('進行の名前を入力', `${sec.name}の進行`)
+                    if (!name) return
+                    await saveCustomProgression(name, chords, songKey)
+                    const updated = await getCustomProgressions()
+                    setMyProgs(updated)
+                    toast(`「${name}」を保存しました`)
+                  }}
+                >
+                  保存
+                </button>
+              )}
             </div>
 
             {/* Chord picker modal */}

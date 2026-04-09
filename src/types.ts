@@ -77,6 +77,15 @@ export interface Song {
 
 export type TabId = 'compose' | 'arrange' | 'ai' | 'dict'
 
+export interface CustomProgression {
+  id: string
+  name: string
+  chords: string[]
+  key?: string
+  tags?: string[]
+  createdAt: number
+}
+
 export interface TabDef {
   id: TabId
   label: string

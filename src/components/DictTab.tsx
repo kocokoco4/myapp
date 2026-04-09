@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { playChord } from '../utils/audio'
+import { getCustomProgressions, saveCustomProgression, deleteCustomProgression } from '../utils/customDict'
+import type { CustomProgression } from '../types'
 
 /* ─── コード辞典データ ─── */
 const CHORD_DICT = [
@@ -72,17 +74,44 @@ const MUSIC_BASICS = [
     tip: 'スケールを覚えると「キーに合うメロディ」がわかります。' },
 ]
 
-type SubTab = 'dict' | 'basics'
+type SubTab = 'dict' | 'basics' | 'my'
 
 export default function DictTab() {
   const [sub, setSub] = useState<SubTab>('dict')
   const [openIdx, setOpenIdx] = useState<number | null>(null)
+  const [myProgs, setMyProgs] = useState<CustomProgression[]>([])
+  const [showAdd, setShowAdd] = useState(false)
+  const [addName, setAddName] = useState('')
+  const [addChords, setAddChords] = useState('')
+
+  const loadMyProgs = useCallback(async () => {
+    const items = await getCustomProgressions()
+    setMyProgs(items)
+  }, [])
+
+  useEffect(() => { loadMyProgs() }, [loadMyProgs])
+
+  const handleAddProg = async () => {
+    const name = addName.trim()
+    const chords = addChords.split(/[,\s|→]+/).map(c => c.trim()).filter(Boolean)
+    if (!name || chords.length === 0) return
+    await saveCustomProgression(name, chords)
+    setAddName('')
+    setAddChords('')
+    setShowAdd(false)
+    loadMyProgs()
+  }
+
+  const handleDeleteProg = async (id: string) => {
+    await deleteCustomProgression(id)
+    loadMyProgs()
+  }
 
   return (
     <div className="animate-fi">
       {/* Sub tabs */}
       <div className="flex gap-2 mb-4">
-        {([['dict', 'コード辞典'], ['basics', '音楽の基礎']] as const).map(([id, label]) => (
+        {([['my', 'マイ進行'], ['dict', 'コード辞典'], ['basics', '音楽の基礎']] as const).map(([id, label]) => (
           <button
             key={id}
             className={`text-[13px] px-4 py-2 rounded-lg font-sans border transition-colors
@@ -93,6 +122,104 @@ export default function DictTab() {
           </button>
         ))}
       </div>
+
+      {/* マイ進行 */}
+      {sub === 'my' && (
+        <div className="space-y-3">
+          {/* Add button */}
+          {!showAdd ? (
+            <button
+              className="w-full py-3 rounded-xl border border-dashed border-border2 text-text3 text-[13px] font-sans hover:border-amber hover:text-amber transition-colors"
+              onClick={() => setShowAdd(true)}
+            >
+              + マイ進行を追加
+            </button>
+          ) : (
+            <div className="bg-bg3 border border-border2 rounded-xl p-4">
+              <div className="text-[13px] font-bold text-amber font-sans mb-3">新しいコード進行を追加</div>
+              <input
+                className="w-full bg-bg4 border border-border2 rounded-lg text-text px-3 py-2 text-sm outline-none font-sans mb-2 focus:border-amber"
+                placeholder="名前（例: サビの定番）"
+                value={addName}
+                onChange={e => setAddName(e.target.value)}
+              />
+              <input
+                className="w-full bg-bg4 border border-border2 rounded-lg text-text px-3 py-2 text-sm outline-none font-sans mb-3 focus:border-amber"
+                placeholder="コード（例: Am F G C）"
+                value={addChords}
+                onChange={e => setAddChords(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAddProg() }}
+              />
+              <div className="text-[10px] text-text3 mb-3 font-sans">スペース、カンマ、→、| で区切れます</div>
+              <div className="flex gap-2">
+                <button
+                  className="flex-1 py-2 bg-amber text-bg rounded-lg text-sm font-bold font-sans"
+                  onClick={handleAddProg}
+                >
+                  保存
+                </button>
+                <button
+                  className="py-2 px-4 border border-border2 rounded-lg text-text3 text-sm font-sans hover:text-text2"
+                  onClick={() => { setShowAdd(false); setAddName(''); setAddChords('') }}
+                >
+                  キャンセル
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* List */}
+          {myProgs.length === 0 && !showAdd && (
+            <div className="text-center py-8 text-text3 text-[13px] font-sans">
+              お気に入りのコード進行を保存しましょう。<br/>
+              制作タブからも保存できます。
+            </div>
+          )}
+          {myProgs.map((prog, i) => (
+            <div key={prog.id} className="bg-bg3 border border-border2 rounded-xl overflow-hidden">
+              <button
+                className="w-full px-4 py-3 flex items-center gap-3 text-left"
+                onClick={() => setOpenIdx(openIdx === i ? null : i)}
+              >
+                <div className="flex-1">
+                  <div className="text-[13px] font-bold text-text font-sans">{prog.name}</div>
+                  {prog.key && <span className="text-[10px] text-text3 font-mono">Key: {prog.key}</span>}
+                </div>
+                <div className="flex gap-1 flex-wrap">
+                  {prog.chords.slice(0, 4).map((c, ci) => (
+                    <span key={ci} className="text-[11px] px-1.5 py-0.5 rounded bg-bg4 text-text2 font-mono border border-border2">{c}</span>
+                  ))}
+                  {prog.chords.length > 4 && <span className="text-[10px] text-text3">+{prog.chords.length - 4}</span>}
+                </div>
+                <span className="text-text3 text-[12px]">{openIdx === i ? '▾' : '▸'}</span>
+              </button>
+              {openIdx === i && (
+                <div className="px-4 pb-3 border-t border-border">
+                  <div className="flex gap-1.5 flex-wrap mt-2 mb-2">
+                    {prog.chords.map((c, ci) => (
+                      <button
+                        key={ci}
+                        className="px-2.5 py-1.5 rounded-lg text-[12px] font-mono border border-amber/40 text-amber bg-amber/5 hover:bg-amber/15 active:scale-95"
+                        onClick={() => playChord(c)}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="text-[11px] px-3 py-1.5 border border-coral/40 rounded-lg text-coral bg-transparent hover:bg-coral/10 font-sans"
+                      onClick={() => handleDeleteProg(prog.id)}
+                    >
+                      削除
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* コード辞典 */}
       {sub === 'dict' && (
