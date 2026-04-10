@@ -104,6 +104,8 @@ export function createPitchDetector(
   let active = false
   let lastNote = ''
   let stableCount = 0
+  let emittedNote = '' // already emitted this note
+  let silenceCount = 0
 
   const detect = () => {
     if (!analyser || !active) return
@@ -112,20 +114,30 @@ export function createPitchDetector(
     const freq = yinDetect(buf, audioCtx!.sampleRate)
 
     if (freq > 0) {
+      silenceCount = 0
       const result = freqToNote(freq)
       if (result && Math.abs(result.cents) < 45) {
         const pitch = result.note + result.octave
         if (pitch === lastNote) {
           stableCount++
-          if (stableCount >= 2) { // ~60ms of stability (faster response)
+          // Emit only once per note. Need 3 frames of stability (~100ms)
+          if (stableCount >= 3 && pitch !== emittedNote) {
             onPitch(pitch)
-            lastNote = '' // allow re-detection of same note
+            emittedNote = pitch
             stableCount = 0
           }
         } else {
           lastNote = pitch
           stableCount = 1
         }
+      }
+    } else {
+      // No pitch detected (silence or noise)
+      silenceCount++
+      if (silenceCount > 5) { // ~150ms of silence → ready for next note
+        emittedNote = ''
+        lastNote = ''
+        stableCount = 0
       }
     }
 
