@@ -65,7 +65,7 @@ export default function BeginnerCompose() {
       </div>
 
       {/* Bubble grid */}
-      <div className="flex flex-wrap justify-center gap-4 mb-8 px-2">
+      <div className="flex flex-wrap justify-center gap-3 mb-8 px-2 max-w-sm mx-auto">
         {BUBBLES.map(b => {
           const isOpen = openBubble === b.id
           return (
@@ -89,7 +89,7 @@ export default function BeginnerCompose() {
 
       {/* Expanded panel */}
       {openBubble && (
-        <div className="bg-bg3 border border-border rounded-3xl mx-1 mb-6 overflow-hidden shadow-[0_4px_24px_rgba(100,160,200,0.1)] animate-fi">
+        <div className="bg-bg3 border border-border rounded-3xl mx-1 mb-6 overflow-hidden shadow-[0_4px_24px_rgba(100,160,200,0.1)] animate-fi max-w-lg mx-auto">
           <div className="flex items-center justify-between px-5 py-3 border-b border-border">
             <span className="text-[15px] font-bold text-text font-sans">
               {BUBBLES.find(b => b.id === openBubble)?.label}
@@ -112,7 +112,7 @@ export default function BeginnerCompose() {
       )}
 
       {/* Action buttons */}
-      <div className="flex flex-col gap-3 px-4">
+      <div className="flex flex-col gap-3 px-4 max-w-lg mx-auto w-full">
         <button
           className={`w-full py-4 rounded-2xl text-[16px] font-sans font-bold shadow-md transition-all active:scale-[0.97]
             ${playing ? 'bg-teal/20 border-2 border-teal text-teal' : 'bg-teal text-white'}`}
@@ -421,14 +421,14 @@ function AIChatPanel({ song }: { song: any }) {
       </div>
       <div className="flex gap-2">
         <input
-          className="flex-1 bg-bg4 border border-border2 rounded-2xl text-text px-4 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
+          className="flex-1 min-w-0 bg-bg4 border border-border2 rounded-2xl text-text px-4 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
           placeholder="なんでも聞いてね..."
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') send() }}
         />
         <button
-          className="px-4 py-2.5 bg-amber text-white rounded-2xl text-[13px] font-bold font-sans"
+          className="px-4 py-2.5 bg-amber text-white rounded-2xl text-[13px] font-bold font-sans shrink-0"
           onClick={send}
           disabled={sending}
         >
