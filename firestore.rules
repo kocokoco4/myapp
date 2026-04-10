@@ -8,7 +8,7 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // ユーザーメタ（curId等）
+    // ユーザーメタ（plan, level, curId等）
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId);
@@ -21,6 +21,23 @@ service cloud.firestore {
         allow update: if isOwner(userId);
         allow delete: if isOwner(userId);
       }
+
+      // カスタム辞典（マイ進行）
+      match /progressions/{progId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // 使用量カウンター（日別）
+      match /usage/{date} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // お知らせ（運営から全ユーザーへ読み取り専用）
+    match /announcements/{id} {
+      allow read: if request.auth != null;
+      allow write: if false; // Admin SDK経由でのみ書き込み
     }
 
     function isOwner(userId) {
