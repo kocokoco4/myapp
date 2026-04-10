@@ -16,7 +16,11 @@ const db = admin.firestore();
 // 設定: firebase functions:config:set gemini.key="AIzaSy..."
 // または Secret Manager: firebase functions:secrets:set GEMINI_KEY
 
-const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+// 動的モデル選択の優先順位（gemini-2.0-flash無印は除外）
+const MODEL_PRIORITY = ["gemini-2.5-flash", "gemini-2.0-flash-001", "gemini-flash-latest"];
+let cachedModel: string | null = null;
+let cachedModelTs = 0;
+const MODEL_CACHE_TTL = 24 * 60 * 60 * 1000;
 
 interface PlanLimits {
   proposals: number; // -1 = unlimited
@@ -76,38 +80,46 @@ export const callAI = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("internal", "Gemini APIキーが設定されていません");
   }
 
+  // 動的モデル選択（キャッシュ24h）
+  const model = await resolveModelServer(apiKey);
+  const isThinking = model.includes("2.5");
+  const genConfig: Record<string, unknown> = {
+    maxOutputTokens: isThinking ? Math.max(maxTokens, 8192) : maxTokens,
+  };
+  if (isThinking) {
+    genConfig.thinkingConfig = { thinkingBudget: 1024 };
+  }
+
   const body = {
     system_instruction: { parts: [{ text: systemText }] },
     contents: messages.map((m: { role: string; content: string }) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }],
     })),
-    generationConfig: { maxOutputTokens: maxTokens },
+    generationConfig: genConfig,
   };
 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
   let result = "";
-  for (const model of GEMINI_MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const d = await res.json();
-      if (d.error && (d.error.code === 404 || d.error.message?.includes("not found"))) continue;
-      if (d.error) throw new Error(d.error.message);
-      result = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      break;
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes("not found")) continue;
-      throw new functions.https.HttpsError("internal", msg);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const d = await res.json();
+    if (d.error) {
+      cachedModel = null; // キャッシュクリア
+      throw new Error(d.error.message);
     }
+    result = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new functions.https.HttpsError("internal", msg);
   }
 
   if (!result) {
-    throw new functions.https.HttpsError("internal", "利用可能なGeminiモデルが見つかりません");
+    throw new functions.https.HttpsError("internal", "レスポンスが空です");
   }
 
   // 使用量インクリメント
@@ -118,3 +130,45 @@ export const callAI = functions.https.onCall(async (data, context) => {
 
   return { text: result };
 });
+
+/** 動的モデル選択 — ListModels + テスト呼び出し */
+async function resolveModelServer(apiKey: string): Promise<string> {
+  if (cachedModel && Date.now() - cachedModelTs < MODEL_CACHE_TTL) {
+    return cachedModel;
+  }
+
+  const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+  const listRes = await fetch(listUrl);
+  const listData = await listRes.json() as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+  const available = (listData.models || [])
+    .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
+    .map(m => m.name.replace("models/", ""));
+
+  for (const candidate of MODEL_PRIORITY) {
+    if (!available.includes(candidate)) continue;
+    const isThinking = candidate.includes("2.5");
+    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${apiKey}`;
+    const testBody = {
+      contents: [{ role: "user", parts: [{ text: "test" }] }],
+      generationConfig: {
+        maxOutputTokens: isThinking ? 8192 : 1,
+        ...(isThinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+      },
+    };
+    try {
+      const testRes = await fetch(testUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(testBody),
+      });
+      const testData = await testRes.json() as { error?: unknown };
+      if (!testData.error) {
+        cachedModel = candidate;
+        cachedModelTs = Date.now();
+        return candidate;
+      }
+    } catch { /* next */ }
+  }
+
+  throw new functions.https.HttpsError("internal", "利用可能なGeminiモデルが見つかりません");
+}
