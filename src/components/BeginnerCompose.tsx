@@ -8,7 +8,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useStore } from '../store'
 import { NOTE_NAMES, DURATION_BEATS } from '../constants'
 import { playChord, playNote, playSectionAudio } from '../utils/audio'
-import { createPitchDetector, quantizeDuration, type PitchDetector } from '../utils/pitchDetect'
+import { createPitchDetector, quantizeDuration, snapToScale, type PitchDetector } from '../utils/pitchDetect'
 import { MOOD_CATEGORIES, generateTemplate, type MoodSelection, type MoodCategory } from '../utils/moodTemplates'
 import { downloadMidi } from '../utils/midi'
 import { gid } from '../utils/id'
@@ -43,7 +43,7 @@ export default function BeginnerCompose() {
     try { const ctx = new AudioContext(); if (ctx.state === 'suspended') await ctx.resume(); ctx.close() } catch {}
     const allMeasures = song.sections.flatMap(s => s.measures)
     if (!allMeasures.some(m => m.chord || m.melNotes?.length)) return
-    const result = playSectionAudio(allMeasures, song.tempo)
+    const result = playSectionAudio(allMeasures, song.tempo, 4, true) // 自動伴奏ON
     stopRef.current = result
     setPlaying(true)
     setTimeout(() => { stopRef.current = null; setPlaying(false) }, result.durationMs + 100)
@@ -567,10 +567,12 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
                 detectorRef.current?.stop(); setMicActive(false); setDetectedPitch(null)
               } else {
                 const detector = createPitchDetector(({ pitch, durationMs }) => {
-                  setDetectedPitch(pitch)
+                  // スケール吸着: キー外の音はスケール内に自動補正
+                  const snapped = snapToScale(pitch, song.key)
+                  setDetectedPitch(snapped)
                   // 歌った長さからBPMに合わせて音価を自動判定
                   const autoDur = quantizeDuration(durationMs, song.tempo)
-                  addNote(pitch, autoDur)
+                  addNote(snapped, autoDur)
                 })
                 detectorRef.current = detector
                 try { await detector.start(); setMicActive(true) } catch { toast('マイクへのアクセスが許可されていません') }

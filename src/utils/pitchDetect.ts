@@ -8,6 +8,30 @@
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
+/** Snap a pitch to the nearest scale note of the given key */
+export function snapToScale(pitch: string, key: string): string {
+  const m = pitch.match(/^([A-G]#?)(\d)$/)
+  if (!m) return pitch
+  const note = m[1]
+  const octave = parseInt(m[2])
+  const MAJOR_INTERVALS = [0, 2, 4, 5, 7, 9, 11] // C major scale steps
+  const keyIdx = NOTE_NAMES.indexOf(key.replace('b', '').slice(0, key.length <= 2 ? key.length : 2))
+  if (keyIdx < 0) return pitch
+  const scaleNotes = MAJOR_INTERVALS.map(i => NOTE_NAMES[(keyIdx + i) % 12])
+  if (scaleNotes.includes(note)) return pitch // already in scale
+  // Find nearest scale note
+  const noteIdx = NOTE_NAMES.indexOf(note)
+  if (noteIdx < 0) return pitch
+  let bestDist = 12
+  let bestNote = note
+  for (const sn of scaleNotes) {
+    const snIdx = NOTE_NAMES.indexOf(sn)
+    const dist = Math.min(Math.abs(snIdx - noteIdx), 12 - Math.abs(snIdx - noteIdx))
+    if (dist < bestDist) { bestDist = dist; bestNote = sn }
+  }
+  return bestNote + octave
+}
+
 /** Hz → 音名 (e.g. 440 → "A4") */
 export function freqToNote(freq: number): { note: string; octave: number; cents: number } | null {
   if (freq < 60 || freq > 2000) return null

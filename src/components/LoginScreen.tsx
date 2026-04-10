@@ -15,10 +15,13 @@ export default function LoginScreen() {
     <div className="h-screen flex items-center justify-center bg-bg">
       <div className="text-center max-w-sm px-6">
         <div className="mb-4"><FinchAvatar size={80} mood="wave" /></div>
-        <h1 className="font-display text-3xl font-extrabold text-amber mb-2">Finchant</h1>
-        <p className="text-text2 text-sm mb-8 leading-relaxed">
-          作曲のすべてを、ひとつに。<br />
-          歌詞・コード・メロディ・伴奏をまとめて管理。
+        <h1 className="font-display text-3xl font-extrabold text-amber mb-3">Finchant</h1>
+        <p className="text-text font-bold text-base mb-3 leading-relaxed">
+          あなたのメロディ、逃がさない。
+        </p>
+        <p className="text-text2 text-sm mb-8 leading-[1.9]">
+          思いついた音、気分、言葉。<br />
+          そのまま、置いておける場所。
         </p>
 
         <button
