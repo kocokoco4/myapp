@@ -139,8 +139,8 @@ function LyricsPanel({ song, updateSong }: { song: any; updateSong: any }) {
       <textarea
         className="bg-bg4 border border-border2 rounded-2xl text-text p-4 text-[15px] leading-[2] resize-none outline-none w-full font-sans min-h-[120px] focus:border-amber"
         placeholder="心に浮かんだ言葉を書いてみよう..."
-        value={song.sections[0]?.lyrics || ''}
-        onChange={e => updateSong((s: any) => { if (s.sections[0]) s.sections[0].lyrics = e.target.value })}
+        value={song.lyrics || ''}
+        onChange={e => updateSong((s: any) => { s.lyrics = e.target.value })}
       />
     </div>
   )
@@ -173,9 +173,10 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
       s.key = tmpl.key
       s.tempo = tmpl.bpm
       s.sections = tmpl.sections.map((sec: any) => ({
-        id: gid(), name: sec.name, lyrics: s.sections[0]?.lyrics || '',
+        id: gid(), name: sec.name, lyrics: '',
         measures: sec.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })),
       }))
+      // 歌詞はsong.lyricsに保持されているので消えない
     })
     toast('曲の骨組みができました！次はメロディをつけてみよう')
   }
@@ -208,8 +209,8 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
             onClick={() => {
               setMood({})
               updateSong((s: any) => {
-                const lyrics = s.sections[0]?.lyrics || ''
-                s.sections = [{ id: gid(), name: 'イントロ', lyrics, measures: Array(4).fill(0).map(() => ({ id: gid(), chord: '', melNotes: [] })) }]
+                s.sections = [{ id: gid(), name: 'イントロ', lyrics: '', measures: Array(4).fill(0).map(() => ({ id: gid(), chord: '', melNotes: [] })) }]
+                // 歌詞はsong.lyricsに保持されているので消えない
               })
             }}
           >
@@ -239,15 +240,14 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
                   key={p.name}
                   className="w-full text-left px-4 py-3 bg-bg4 border border-border2 rounded-2xl hover:border-amber hover:shadow-md active:scale-[0.98] transition-all"
                   onClick={() => {
-                    // Apply as repeating sections
-                    const lyrics = song.sections[0]?.lyrics || ''
                     updateSong((s: any) => {
                       s.sections = [
                         { id: gid(), name: 'イントロ', lyrics: '', measures: p.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
-                        { id: gid(), name: 'Aメロ', lyrics, measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
+                        { id: gid(), name: 'Aメロ', lyrics: '', measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
                         { id: gid(), name: 'サビ', lyrics: '', measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
                         { id: gid(), name: 'アウトロ', lyrics: '', measures: p.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
                       ]
+                      // 歌詞はsong.lyricsに保持されているので消えない
                     })
                     playChord(p.chords[0])
                     toast(`「${p.name}」で曲を作りました`)
@@ -343,11 +343,11 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
   return (
     <div>
       {/* Show lyrics for reference while composing melody */}
-      {song.sections[0]?.lyrics && (
+      {song.lyrics && (
         <div className="bg-bg4 rounded-2xl px-4 py-3 mb-3">
           <div className="text-[11px] text-text3 font-sans mb-1">歌詞を見ながらメロディをつけよう</div>
           <div className="text-[14px] text-text font-sans leading-[2] whitespace-pre-wrap max-h-[80px] overflow-y-auto">
-            {song.sections[0].lyrics}
+            {song.lyrics}
           </div>
         </div>
       )}
