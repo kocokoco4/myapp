@@ -176,7 +176,7 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
       let melodyNum = 0
       s.sections = tmpl.sections.map((sec: any) => {
         const isSabi = sec.name.includes('サビ') || sec.name.includes('ラスサビ')
-        melodyNum++
+        if (!isSabi) melodyNum++
         return {
           id: gid(),
           name: isSabi ? `サビ ★` : `メロディ ${melodyNum}`,
