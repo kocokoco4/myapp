@@ -25,11 +25,16 @@ export async function callGemini(systemText: string, messages: Message[], maxTok
     try {
       const callAI = httpsCallable(functions, 'callAI')
       const result = await callAI({ systemText, messages, maxTokens, feature })
-      return (result.data as { text: string }).text
+      const text = (result.data as { text: string }).text
+      if (text) return text
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
-      // Cloud Functions未デプロイの場合はフォールバック
-      if (!msg.includes('NOT_FOUND') && !msg.includes('internal')) throw e
+      console.warn('Cloud Functions callAI failed, falling back to local:', msg)
+      // 使用量制限エラーの場合はユーザーに表示
+      if (msg.includes('resource-exhausted') || msg.includes('上限')) {
+        throw new Error('本日のAI利用回数の上限に達しました。プランをアップグレードしてください')
+      }
+      // それ以外はローカルフォールバック
     }
   }
 

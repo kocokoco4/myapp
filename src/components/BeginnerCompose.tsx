@@ -16,7 +16,7 @@ import FinchAvatar from './FinchAvatar'
 
 const CAT_KEYS: MoodCategory[] = ['emotion', 'scene', 'energy', 'relation']
 
-type BubbleId = 'lyrics' | 'autobuild' | 'melody' | 'learn' | 'ai' | 'edit' | 'accomp' | 'settings' | 'export'
+type BubbleId = 'lyrics' | 'autobuild' | 'melody' | 'learn' | 'ai' | 'finish'
 
 interface Bubble {
   id: BubbleId
@@ -30,10 +30,7 @@ const ALL_BUBBLES: Bubble[] = [
   { id: 'lyrics', label: '歌詞', color: '#50b0e0', desc: '歌いたい言葉を書こう', levels: ['beginner', 'intermediate', 'advanced'] },
   { id: 'autobuild', label: '曲にする', color: '#50c878', desc: '雰囲気を選ぶだけでOK', levels: ['beginner', 'intermediate', 'advanced'] },
   { id: 'melody', label: 'メロディ', color: '#e080a0', desc: '鍵盤か鼻歌で音を入れる', levels: ['beginner', 'intermediate', 'advanced'] },
-  { id: 'edit', label: '編集', color: '#e0a050', desc: 'コードと音符を細かく調整', levels: ['intermediate', 'advanced'] },
-  { id: 'accomp', label: '伴奏', color: '#c880e0', desc: 'AIでピアノ・ベース・ドラム生成', levels: ['intermediate', 'advanced'] },
-  { id: 'settings', label: '整える', color: '#80c0c0', desc: 'KEY・BPM・拍子を変更', levels: ['advanced'] },
-  { id: 'export', label: '書き出す', color: '#d0a050', desc: 'MIDI/MusicXMLで保存', levels: ['advanced'] },
+  { id: 'finish', label: '仕上げ', color: '#e0a050', desc: '伴奏・設定・書き出し', levels: ['intermediate', 'advanced'] },
   { id: 'learn', label: '学ぶ', color: '#9090cc', desc: '音楽の基礎とコード辞典', levels: ['beginner', 'intermediate', 'advanced'] },
 ]
 
@@ -119,10 +116,7 @@ export default function BeginnerCompose() {
             {openBubble === 'lyrics' && <LyricsPanel song={song} updateSong={updateSong} />}
             {openBubble === 'autobuild' && <AutoBuildPanel song={song} updateSong={updateSong} toast={toast} />}
             {openBubble === 'melody' && <MelodyPanel song={song} updateSong={updateSong} toast={toast} />}
-            {openBubble === 'edit' && <EditPanel song={song} updateSong={updateSong} toast={toast} />}
-            {openBubble === 'accomp' && <AccompPanel song={song} updateSong={updateSong} toast={toast} />}
-            {openBubble === 'settings' && <SettingsPanel song={song} updateSong={updateSong} />}
-            {openBubble === 'export' && <ExportPanel song={song} toast={toast} />}
+            {openBubble === 'finish' && <FinishPanel song={song} updateSong={updateSong} toast={toast} activeLevel={activeLevel} />}
             {openBubble === 'learn' && <LearnPanel />}
             {openBubble === 'ai' && <AIChatPanel song={song} />}
           </div>
@@ -636,9 +630,15 @@ function AIChatPanel({ song }: { song: any }) {
     try {
       const sys = `初心者向けの作曲アドバイザー。「${song.title}」を制作中。Key:${song.key} BPM:${song.tempo}。やさしい言葉で短く答えて。専門用語は避けて。`
       const resp = await callGemini(sys, [{ role: 'user', content: t }], 400)
-      setMessages(prev => [...prev, { role: 'ai', text: resp }])
-    } catch {
-      setMessages(prev => [...prev, { role: 'ai', text: 'ごめんね、うまく答えられなかった。もう一度聞いてみて。' }])
+      if (!resp || resp.trim() === '') {
+        setMessages(prev => [...prev, { role: 'ai', text: '（返答が空でした。もう一度聞いてみて）' }])
+      } else {
+        setMessages(prev => [...prev, { role: 'ai', text: resp }])
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('AI chat error:', e)
+      setMessages(prev => [...prev, { role: 'ai', text: `エラー: ${msg}` }])
     }
     setSending(false)
   }
@@ -774,6 +774,38 @@ function LearnPanel() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/* ─── Finish Panel — 仕上げ（編集/伴奏/設定/書き出し統合） ─── */
+function FinishPanel({ song, updateSong, toast, activeLevel }: { song: any; updateSong: any; toast: any; activeLevel: 'beginner' | 'intermediate' | 'advanced' }) {
+  const isAdv = activeLevel === 'advanced'
+  const tabs: { id: string; label: string }[] = [
+    { id: 'edit', label: '編集' },
+    { id: 'accomp', label: 'AI伴奏' },
+    ...(isAdv ? [{ id: 'settings', label: '設定' }, { id: 'export', label: '書き出す' }] : []),
+  ]
+  const [tab, setTab] = useState<string>(tabs[0].id)
+
+  return (
+    <div>
+      <div className="flex gap-1.5 mb-4 flex-wrap">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            className={`text-[12px] px-3 py-1.5 rounded-xl font-sans border transition-colors
+              ${tab === t.id ? 'bg-amber/15 border-amber text-amber font-bold' : 'bg-bg4 border-border2 text-text3'}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'edit' && <EditPanel song={song} updateSong={updateSong} toast={toast} />}
+      {tab === 'accomp' && <AccompPanel song={song} updateSong={updateSong} toast={toast} />}
+      {tab === 'settings' && <SettingsPanel song={song} updateSong={updateSong} />}
+      {tab === 'export' && <ExportPanel song={song} toast={toast} />}
     </div>
   )
 }
