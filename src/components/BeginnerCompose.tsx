@@ -312,6 +312,7 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
   const [micActive, setMicActive] = useState(false)
   const [detectedPitch, setDetectedPitch] = useState<string | null>(null)
   const detectorRef = useRef<PitchDetector | null>(null)
+  const [targetSection, setTargetSection] = useState(0) // which section to add notes to
 
   const scaleNotes = (() => {
     const MAJOR = [0, 2, 4, 5, 7, 9, 11]
@@ -322,25 +323,22 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
 
   const addNote = useCallback((pitch: string) => {
     updateSong((s: any) => {
-      // Find first empty slot across ALL sections
-      for (const sec of s.sections) {
-        for (const m of sec.measures) {
-          let sb = 0
-          for (const n of (m.melNotes || [])) sb += (DURATION_BEATS[n.duration] || 1)
-          if (sb + (DURATION_BEATS[dur] || 1) <= 4.01) {
-            if (!m.melNotes) m.melNotes = []
-            m.melNotes.push({ pitch, duration: dur, startBeat: sb })
-            return
-          }
+      // Add to target section's first empty slot
+      const sec = s.sections[targetSection] || s.sections[0]
+      if (!sec) return
+      for (const m of sec.measures) {
+        let sb = 0
+        for (const n of (m.melNotes || [])) sb += (DURATION_BEATS[n.duration] || 1)
+        if (sb + (DURATION_BEATS[dur] || 1) <= 4.01) {
+          if (!m.melNotes) m.melNotes = []
+          m.melNotes.push({ pitch, duration: dur, startBeat: sb })
+          return
         }
       }
-      // All measures full → add new measure to last section
-      const lastSec = s.sections[s.sections.length - 1]
-      if (lastSec) {
-        lastSec.measures.push({ id: gid(), chord: '', melNotes: [{ pitch, duration: dur, startBeat: 0 }] })
-      }
+      // Section full → add new measure
+      sec.measures.push({ id: gid(), chord: sec.measures[0]?.chord || '', melNotes: [{ pitch, duration: dur, startBeat: 0 }] })
     })
-  }, [dur, updateSong])
+  }, [dur, targetSection, updateSong])
 
   return (
     <div>
@@ -351,6 +349,43 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
           <div className="text-[14px] text-text font-sans leading-[2] whitespace-pre-wrap max-h-[80px] overflow-y-auto">
             {song.lyrics}
           </div>
+        </div>
+      )}
+
+      {/* Section selector + melody status */}
+      {song.sections.length > 1 && (
+        <div className="mb-3">
+          <div className="text-[12px] text-text2 font-sans mb-1.5">どのパートにメロディを入れる？</div>
+          <div className="flex gap-1.5 flex-wrap mb-2">
+            {song.sections.map((sec: any, si: number) => {
+              const noteCount = sec.measures.reduce((sum: number, m: any) => sum + (m.melNotes?.filter((n: any) => n.pitch !== 'R').length || 0), 0)
+              return (
+                <button
+                  key={si}
+                  className={`text-[12px] px-3 py-1.5 rounded-2xl font-sans border transition-colors
+                    ${targetSection === si ? 'bg-amber/15 border-amber text-amber font-bold' : 'bg-bg4 border-border2 text-text3'}`}
+                  onClick={() => setTargetSection(si)}
+                >
+                  {sec.name}
+                  {noteCount > 0 && <span className="ml-1 text-[10px] opacity-60">({noteCount}音)</span>}
+                </button>
+              )
+            })}
+          </div>
+          {/* Clear melody for selected section */}
+          {song.sections[targetSection]?.measures.some((m: any) => m.melNotes?.length > 0) && (
+            <button
+              className="text-[11px] text-coral font-sans underline"
+              onClick={() => {
+                updateSong((s: any) => {
+                  for (const m of s.sections[targetSection].measures) { m.melNotes = [] }
+                })
+                toast(`${song.sections[targetSection].name}のメロディをクリアしました`)
+              }}
+            >
+              {song.sections[targetSection]?.name}のメロディをやり直す
+            </button>
+          )}
         </div>
       )}
 
