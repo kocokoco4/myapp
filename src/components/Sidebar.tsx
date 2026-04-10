@@ -88,11 +88,8 @@ export default function Sidebar({ open, onClose }: Props) {
                 {s.status}
               </span>
               <button
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none text-text3 cursor-pointer text-sm p-1 opacity-0 hover:opacity-100 group-hover:opacity-100"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none text-text3 cursor-pointer text-sm p-2 hover:text-coral"
                 onClick={e => { e.stopPropagation(); setConfirmId(s.id) }}
-                style={{ opacity: undefined }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
               >
                 ×
               </button>
