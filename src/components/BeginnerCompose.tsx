@@ -374,29 +374,73 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
       </div>
 
       {/* Section selector + melody status */}
-      {song.sections.length > 1 && (
-        <div className="mb-3">
-          <div className="text-[12px] text-text2 font-sans mb-1.5">どのパートにメロディを入れる？</div>
-          <div className="flex gap-1.5 flex-wrap mb-2">
-            {song.sections.map((sec: any, si: number) => {
-              const noteCount = sec.measures.reduce((sum: number, m: any) => sum + (m.melNotes?.filter((n: any) => n.pitch !== 'R').length || 0), 0)
-              return (
-                <button
-                  key={si}
-                  className={`text-[12px] px-3 py-1.5 rounded-2xl font-sans border transition-colors
-                    ${targetSection === si ? 'bg-amber/15 border-amber text-amber font-bold' : 'bg-bg4 border-border2 text-text3'}`}
-                  onClick={() => setTargetSection(si)}
-                >
-                  {sec.name}
-                  {noteCount > 0 && <span className="ml-1 text-[10px] opacity-60">({noteCount}音)</span>}
-                </button>
-              )
-            })}
-          </div>
-          {/* Clear melody for selected section */}
+      <div className="mb-3">
+        <div className="text-[12px] text-text2 font-sans mb-1.5">どのパートにメロディを入れる？</div>
+        <div className="flex gap-1.5 flex-wrap mb-2">
+          {song.sections.map((sec: any, si: number) => {
+            const noteCount = sec.measures.reduce((sum: number, m: any) => sum + (m.melNotes?.filter((n: any) => n.pitch !== 'R').length || 0), 0)
+            const isSabi = sec.name.includes('★')
+            return (
+              <button
+                key={si}
+                className={`text-[12px] px-3 py-1.5 rounded-2xl font-sans border transition-colors
+                  ${targetSection === si
+                    ? isSabi ? 'bg-coral/15 border-coral text-coral font-bold' : 'bg-amber/15 border-amber text-amber font-bold'
+                    : 'bg-bg4 border-border2 text-text3'}`}
+                onClick={() => setTargetSection(si)}
+              >
+                {sec.name}
+                {noteCount > 0 && <span className="ml-1 text-[10px] opacity-60">({noteCount}音)</span>}
+              </button>
+            )
+          })}
+          {/* Add part */}
+          <button
+            className="text-[12px] px-3 py-1.5 rounded-2xl font-sans border border-dashed border-border2 text-text3 hover:border-amber hover:text-amber"
+            onClick={() => {
+              const num = song.sections.filter((s: any) => !s.name.includes('★')).length + 1
+              updateSong((s: any) => {
+                const chords = s.sections[0]?.measures.map((m: any) => m.chord) || ['C', 'G', 'Am', 'F']
+                s.sections.push({
+                  id: gid(), name: `メロディ ${num}`, lyrics: '',
+                  measures: chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })),
+                })
+              })
+              setTargetSection(song.sections.length)
+            }}
+          >
+            + パート追加
+          </button>
+        </div>
+
+        {/* Actions for selected section */}
+        <div className="flex gap-2 flex-wrap">
+          {/* Toggle sabi flag */}
+          {song.sections[targetSection] && (
+            <button
+              className={`text-[11px] px-2.5 py-1 rounded-xl font-sans border transition-colors
+                ${song.sections[targetSection]?.name.includes('★')
+                  ? 'bg-coral/10 border-coral/40 text-coral'
+                  : 'bg-bg4 border-border2 text-text3 hover:border-coral hover:text-coral'}`}
+              onClick={() => {
+                updateSong((s: any) => {
+                  const sec = s.sections[targetSection]
+                  if (sec.name.includes('★')) {
+                    sec.name = sec.name.replace(' ★', '').replace('サビ ★', `メロディ ${targetSection + 1}`)
+                  } else {
+                    sec.name = 'サビ ★'
+                  }
+                })
+              }}
+            >
+              {song.sections[targetSection]?.name.includes('★') ? '★ サビを解除' : '★ サビにする'}
+            </button>
+          )}
+
+          {/* Clear melody */}
           {song.sections[targetSection]?.measures.some((m: any) => m.melNotes?.length > 0) && (
             <button
-              className="text-[11px] text-coral font-sans underline"
+              className="text-[11px] px-2.5 py-1 rounded-xl font-sans border border-border2 text-text3 hover:border-amber hover:text-amber"
               onClick={() => {
                 updateSong((s: any) => {
                   for (const m of s.sections[targetSection].measures) { m.melNotes = [] }
@@ -404,11 +448,26 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
                 toast(`${song.sections[targetSection].name}のメロディをクリアしました`)
               }}
             >
-              {song.sections[targetSection]?.name}のメロディをやり直す
+              やり直す
+            </button>
+          )}
+
+          {/* Delete part */}
+          {song.sections.length > 1 && (
+            <button
+              className="text-[11px] px-2.5 py-1 rounded-xl font-sans border border-border2 text-text3 hover:border-coral hover:text-coral"
+              onClick={() => {
+                const name = song.sections[targetSection]?.name
+                updateSong((s: any) => { s.sections.splice(targetSection, 1) })
+                setTargetSection(Math.max(0, targetSection - 1))
+                toast(`${name}を削除しました`)
+              }}
+            >
+              パート削除
             </button>
           )}
         </div>
-      )}
+      </div>
 
       <div className="flex gap-2 mb-3">
         {([['keyboard', '鍵盤'], ['mic', '鼻歌']] as const).map(([m, label]) => (
