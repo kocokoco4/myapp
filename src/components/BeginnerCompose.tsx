@@ -8,7 +8,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useStore } from '../store'
 import { NOTE_NAMES, DURATION_BEATS } from '../constants'
 import { playChord, playNote, playSectionAudio } from '../utils/audio'
-import { createPitchDetector, type PitchDetector } from '../utils/pitchDetect'
+import { createPitchDetector, quantizeDuration, type PitchDetector } from '../utils/pitchDetect'
 import { MOOD_CATEGORIES, generateTemplate, type MoodSelection, type MoodCategory } from '../utils/moodTemplates'
 import { downloadMidi } from '../utils/midi'
 import { gid } from '../utils/id'
@@ -337,7 +337,8 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
     return MAJOR.map(i => NOTE_NAMES[(ri + i) % 12])
   })()
 
-  const addNote = useCallback((pitch: string) => {
+  const addNote = useCallback((pitch: string, customDur?: string) => {
+    const noteDur = customDur || dur
     updateSong((s: any) => {
       // Add to target section's first empty slot
       const sec = s.sections[targetSection] || s.sections[0]
@@ -345,14 +346,14 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
       for (const m of sec.measures) {
         let sb = 0
         for (const n of (m.melNotes || [])) sb += (DURATION_BEATS[n.duration] || 1)
-        if (sb + (DURATION_BEATS[dur] || 1) <= 4.01) {
+        if (sb + (DURATION_BEATS[noteDur] || 1) <= 4.01) {
           if (!m.melNotes) m.melNotes = []
-          m.melNotes.push({ pitch, duration: dur, startBeat: sb })
+          m.melNotes.push({ pitch, duration: noteDur, startBeat: sb })
           return
         }
       }
       // Section full → add new measure
-      sec.measures.push({ id: gid(), chord: sec.measures[0]?.chord || '', melNotes: [{ pitch, duration: dur, startBeat: 0 }] })
+      sec.measures.push({ id: gid(), chord: sec.measures[0]?.chord || '', melNotes: [{ pitch, duration: noteDur, startBeat: 0 }] })
     })
   }, [dur, targetSection, updateSong])
 
@@ -565,10 +566,11 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
               if (micActive) {
                 detectorRef.current?.stop(); setMicActive(false); setDetectedPitch(null)
               } else {
-                const detector = createPitchDetector(pitch => {
+                const detector = createPitchDetector(({ pitch, durationMs }) => {
                   setDetectedPitch(pitch)
-                  // 録音中は音を鳴らさない（オーバーラップ防止）
-                  addNote(pitch)
+                  // 歌った長さからBPMに合わせて音価を自動判定
+                  const autoDur = quantizeDuration(durationMs, song.tempo)
+                  addNote(pitch, autoDur)
                 })
                 detectorRef.current = detector
                 try { await detector.start(); setMicActive(true) } catch { toast('マイクへのアクセスが許可されていません') }

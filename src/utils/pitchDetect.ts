@@ -90,11 +90,46 @@ export interface PitchDetector {
   isActive: () => boolean
 }
 
+export interface DetectedNote {
+  pitch: string
+  durationMs: number
+}
+
 /**
- * Create a pitch detector that calls onPitch whenever a stable pitch is detected
+ * Quantize duration (ms) to nearest musical note value based on BPM.
+ * Returns duration string: 'w'|'h'|'q'|'8'|'16'|'32'|'dq'|'d8'|'tq'|'t8'
+ */
+export function quantizeDuration(ms: number, bpm: number): string {
+  const beatMs = 60000 / bpm // 1 quarter note in ms
+  // Candidate durations in ms
+  const candidates: { v: string; ms: number }[] = [
+    { v: 'w', ms: beatMs * 4 },
+    { v: 'dh', ms: beatMs * 3 },
+    { v: 'h', ms: beatMs * 2 },
+    { v: 'dq', ms: beatMs * 1.5 },
+    { v: 'q', ms: beatMs },
+    { v: 'tq', ms: beatMs * (2 / 3) }, // quarter triplet
+    { v: 'd8', ms: beatMs * 0.75 },
+    { v: '8', ms: beatMs * 0.5 },
+    { v: 't8', ms: beatMs * (1 / 3) }, // eighth triplet
+    { v: '16', ms: beatMs * 0.25 },
+    { v: '32', ms: beatMs * 0.125 },
+  ]
+  let best = candidates[0]
+  let bestDiff = Math.abs(ms - best.ms)
+  for (const c of candidates) {
+    const diff = Math.abs(ms - c.ms)
+    if (diff < bestDiff) { best = c; bestDiff = diff }
+  }
+  return best.v
+}
+
+/**
+ * Create a pitch detector with onset/offset detection.
+ * Calls onNote(pitch, durationMs) when a note ends.
  */
 export function createPitchDetector(
-  onPitch: (pitch: string) => void,
+  onNote: (note: DetectedNote) => void,
   _options?: { minConfidence?: number }
 ): PitchDetector {
   let audioCtx: AudioContext | null = null
@@ -102,10 +137,27 @@ export function createPitchDetector(
   let stream: MediaStream | null = null
   let rafId = 0
   let active = false
-  let lastNote = ''
-  let stableCount = 0
-  let emittedNote = '' // already emitted this note
-  let silenceCount = 0
+
+  // Onset/offset state
+  let currentNote = '' // note being sung right now
+  let noteStartTime = 0 // ms when current note started
+  let lastStableNote = '' // last candidate
+  let stableFrames = 0
+  let silenceFrames = 0
+
+  const STABILITY_FRAMES = 3 // ~100ms confirm
+  const SILENCE_FRAMES_END = 4 // ~130ms silence = note end
+
+  const emitNote = () => {
+    if (currentNote && noteStartTime > 0) {
+      const durationMs = performance.now() - noteStartTime
+      if (durationMs > 80) { // ignore very short glitches
+        onNote({ pitch: currentNote, durationMs })
+      }
+      currentNote = ''
+      noteStartTime = 0
+    }
+  }
 
   const detect = () => {
     if (!analyser || !active) return
@@ -114,30 +166,33 @@ export function createPitchDetector(
     const freq = yinDetect(buf, audioCtx!.sampleRate)
 
     if (freq > 0) {
-      silenceCount = 0
+      silenceFrames = 0
       const result = freqToNote(freq)
       if (result && Math.abs(result.cents) < 45) {
         const pitch = result.note + result.octave
-        if (pitch === lastNote) {
-          stableCount++
-          // Emit only once per note. Need 3 frames of stability (~100ms)
-          if (stableCount >= 3 && pitch !== emittedNote) {
-            onPitch(pitch)
-            emittedNote = pitch
-            stableCount = 0
+        if (pitch === lastStableNote) {
+          stableFrames++
+          if (stableFrames >= STABILITY_FRAMES) {
+            // Pitch is stable
+            if (currentNote !== pitch) {
+              // New note started (pitch change)
+              if (currentNote) emitNote() // emit previous note
+              currentNote = pitch
+              noteStartTime = performance.now()
+            }
           }
         } else {
-          lastNote = pitch
-          stableCount = 1
+          lastStableNote = pitch
+          stableFrames = 1
         }
       }
     } else {
-      // No pitch detected (silence or noise)
-      silenceCount++
-      if (silenceCount > 5) { // ~150ms of silence → ready for next note
-        emittedNote = ''
-        lastNote = ''
-        stableCount = 0
+      silenceFrames++
+      if (silenceFrames >= SILENCE_FRAMES_END) {
+        // Silence detected → end current note
+        if (currentNote) emitNote()
+        lastStableNote = ''
+        stableFrames = 0
       }
     }
 
@@ -159,6 +214,8 @@ export function createPitchDetector(
       detect()
     },
     stop() {
+      // Emit final note if still singing
+      if (currentNote) emitNote()
       active = false
       cancelAnimationFrame(rafId)
       stream?.getTracks().forEach(t => t.stop())

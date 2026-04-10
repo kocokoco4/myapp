@@ -810,7 +810,7 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
                               setMicActive(false)
                               setDetectedPitch(null)
                             } else {
-                              const detector = createPitchDetector((pitch) => {
+                              const detector = createPitchDetector(({ pitch }) => {
                                 setDetectedPitch(pitch)
                                 playNote(pitch)
                               })
