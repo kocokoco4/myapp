@@ -311,6 +311,16 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
 }
 
 /* ─── Melody Panel (keyboard + mic) ─── */
+/** Re-number melody sections: メロディ1, メロディ2, ... (skip サビ★) */
+function renumberSections(sections: any[]) {
+  let num = 0
+  for (const sec of sections) {
+    if (sec.name.includes('★')) continue
+    num++
+    sec.name = `メロディ ${num}`
+  }
+}
+
 function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; toast: any }) {
   const [mode, setMode] = useState<'keyboard' | 'mic'>('keyboard')
   const [octave, setOctave] = useState(4)
@@ -398,13 +408,13 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
           <button
             className="text-[12px] px-3 py-1.5 rounded-2xl font-sans border border-dashed border-border2 text-text3 hover:border-amber hover:text-amber"
             onClick={() => {
-              const num = song.sections.filter((s: any) => !s.name.includes('★')).length + 1
               updateSong((s: any) => {
                 const chords = s.sections[0]?.measures.map((m: any) => m.chord) || ['C', 'G', 'Am', 'F']
                 s.sections.push({
-                  id: gid(), name: `メロディ ${num}`, lyrics: '',
+                  id: gid(), name: `メロディ`, lyrics: '',
                   measures: chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })),
                 })
+                renumberSections(s.sections)
               })
               setTargetSection(song.sections.length)
             }}
@@ -426,10 +436,11 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
                 updateSong((s: any) => {
                   const sec = s.sections[targetSection]
                   if (sec.name.includes('★')) {
-                    sec.name = sec.name.replace(' ★', '').replace('サビ ★', `メロディ ${targetSection + 1}`)
+                    sec.name = `メロディ` // placeholder, renumber will fix
                   } else {
                     sec.name = 'サビ ★'
                   }
+                  renumberSections(s.sections)
                 })
               }}
             >
@@ -458,7 +469,10 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
               className="text-[11px] px-2.5 py-1 rounded-xl font-sans border border-border2 text-text3 hover:border-coral hover:text-coral"
               onClick={() => {
                 const name = song.sections[targetSection]?.name
-                updateSong((s: any) => { s.sections.splice(targetSection, 1) })
+                updateSong((s: any) => {
+                  s.sections.splice(targetSection, 1)
+                  renumberSections(s.sections)
+                })
                 setTargetSection(Math.max(0, targetSection - 1))
                 toast(`${name}を削除しました`)
               }}
