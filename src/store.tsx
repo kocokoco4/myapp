@@ -258,7 +258,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Beginner mode forces light theme
-    const activeTheme = level === 'beginner' ? 'light' : theme
+    const activeTheme = theme
     document.documentElement.setAttribute('data-theme', activeTheme)
     localStorage.setItem(CONFIG.THEME_KEY, theme)
   }, [theme, level])

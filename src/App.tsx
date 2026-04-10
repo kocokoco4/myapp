@@ -8,7 +8,6 @@ import TopBar from './components/TopBar'
 import TabsBar from './components/TabsBar'
 import FAB from './components/FAB'
 import SettingsModal from './components/SettingsModal'
-import ComposeTab from './components/ComposeTab'
 import ArrangeTab from './components/ArrangeTab'
 import AIChat from './components/AIChat'
 import DictTab from './components/DictTab'
@@ -28,7 +27,7 @@ function AppContent() {
 
   const renderTab = () => {
     switch (curTab) {
-      case 'compose': return level === 'beginner' ? <BeginnerCompose /> : <ComposeTab />
+      case 'compose': return <BeginnerCompose />
       case 'arrange': return <ArrangeTab onOpenSettings={openSettings} />
       case 'ai': return <AIChat onOpenSettings={openSettings} />
       case 'dict': return <DictTab />
@@ -49,8 +48,8 @@ function AppContent() {
         {song ? (
           <>
             <TopBar onMenuClick={toggleSidebar} onOpenSettings={openSettings} />
-            {level !== 'beginner' && <TabsBar />}
-            <div className={`flex-1 overflow-y-auto p-4 max-md:p-3 ${level !== 'beginner' ? 'max-md:pb-20' : ''}`}>
+            {false && <TabsBar />}
+            <div className={`flex-1 overflow-y-auto p-4 max-md:p-3 ${false ? 'max-md:pb-20' : ''}`}>
               {renderTab()}
             </div>
           </>
@@ -68,7 +67,7 @@ function AppContent() {
         )}
       </div>
 
-      {level !== 'beginner' && <FAB />}
+      {false && <FAB />}
       <div id="toast" />
       <SettingsModal open={settingsOpen} onClose={closeSettings} />
     </div>

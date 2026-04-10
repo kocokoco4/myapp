@@ -1,39 +1,53 @@
 /**
- * BeginnerCompose — 初心者向け「ブドウの房」型制作画面
- * 大きな円ボタン5つ（歌詞・コード・メロディ・伴奏・辞典）
- * 各円をタップ→展開→入力→閉じる
- * 下に再生・GarageBandボタン
+ * UniversalCompose — 全レベル共通の円型UI
+ * レベル（beginner/intermediate/advanced）に応じて円の数と機能が変わる
  */
 import { useState, useRef, useCallback } from 'react'
 import { useStore } from '../store'
-import { NOTE_NAMES, DURATION_BEATS } from '../constants'
+import { NOTE_NAMES, DURATION_BEATS, KEYS, TIME_SIGNATURES } from '../constants'
 import { playChord, playNote, playSectionAudio } from '../utils/audio'
 import { createPitchDetector, quantizeDuration, snapToScale, type PitchDetector } from '../utils/pitchDetect'
 import { MOOD_CATEGORIES, generateTemplate, type MoodSelection, type MoodCategory } from '../utils/moodTemplates'
 import { downloadMidi } from '../utils/midi'
+import { exportMusicXML } from '../utils/musicxml'
 import { gid } from '../utils/id'
 import { callGemini } from '../utils/gemini'
 import FinchAvatar from './FinchAvatar'
 
 const CAT_KEYS: MoodCategory[] = ['emotion', 'scene', 'energy', 'relation']
 
-type BubbleId = 'lyrics' | 'autobuild' | 'melody' | 'learn' | 'ai'
+type BubbleId = 'lyrics' | 'autobuild' | 'melody' | 'learn' | 'ai' | 'edit' | 'accomp' | 'settings' | 'export'
 
-const BUBBLES: { id: BubbleId; label: string; color: string; desc: string }[] = [
-  { id: 'lyrics', label: '歌詞', color: '#50b0e0', desc: '歌いたい言葉を書こう' },
-  { id: 'autobuild', label: '曲にする', color: '#50c878', desc: '雰囲気を選ぶだけでOK' },
-  { id: 'melody', label: 'メロディ', color: '#e080a0', desc: '鍵盤か鼻歌で音を入れる' },
-  { id: 'learn', label: '学ぶ', color: '#9090cc', desc: '音楽の基礎とコード辞典' },
+interface Bubble {
+  id: BubbleId
+  label: string
+  color: string
+  desc: string
+  levels: Array<'beginner' | 'intermediate' | 'advanced'>
+}
+
+const ALL_BUBBLES: Bubble[] = [
+  { id: 'lyrics', label: '歌詞', color: '#50b0e0', desc: '歌いたい言葉を書こう', levels: ['beginner', 'intermediate', 'advanced'] },
+  { id: 'autobuild', label: '曲にする', color: '#50c878', desc: '雰囲気を選ぶだけでOK', levels: ['beginner', 'intermediate', 'advanced'] },
+  { id: 'melody', label: 'メロディ', color: '#e080a0', desc: '鍵盤か鼻歌で音を入れる', levels: ['beginner', 'intermediate', 'advanced'] },
+  { id: 'edit', label: '編集', color: '#e0a050', desc: 'コードと音符を細かく調整', levels: ['intermediate', 'advanced'] },
+  { id: 'accomp', label: '伴奏', color: '#c880e0', desc: 'AIでピアノ・ベース・ドラム生成', levels: ['intermediate', 'advanced'] },
+  { id: 'settings', label: '整える', color: '#80c0c0', desc: 'KEY・BPM・拍子を変更', levels: ['advanced'] },
+  { id: 'export', label: '書き出す', color: '#d0a050', desc: 'MIDI/MusicXMLで保存', levels: ['advanced'] },
+  { id: 'learn', label: '学ぶ', color: '#9090cc', desc: '音楽の基礎とコード辞典', levels: ['beginner', 'intermediate', 'advanced'] },
 ]
 
 export default function BeginnerCompose() {
-  const { currentSong, updateSong, toast } = useStore()
+  const { currentSong, updateSong, toast, level } = useStore()
   const song = currentSong()
   const [openBubble, setOpenBubble] = useState<BubbleId | null>(null)
   const [playing, setPlaying] = useState(false)
   const stopRef = useRef<{ stop: () => void } | null>(null)
 
   if (!song) return null
+
+  const activeLevel = (level || 'beginner') as 'beginner' | 'intermediate' | 'advanced'
+  const BUBBLES = ALL_BUBBLES.filter(b => b.levels.includes(activeLevel))
 
   const handlePlay = useCallback(async () => {
     if (stopRef.current) {
@@ -105,6 +119,10 @@ export default function BeginnerCompose() {
             {openBubble === 'lyrics' && <LyricsPanel song={song} updateSong={updateSong} />}
             {openBubble === 'autobuild' && <AutoBuildPanel song={song} updateSong={updateSong} toast={toast} />}
             {openBubble === 'melody' && <MelodyPanel song={song} updateSong={updateSong} toast={toast} />}
+            {openBubble === 'edit' && <EditPanel song={song} updateSong={updateSong} toast={toast} />}
+            {openBubble === 'accomp' && <AccompPanel song={song} updateSong={updateSong} toast={toast} />}
+            {openBubble === 'settings' && <SettingsPanel song={song} updateSong={updateSong} />}
+            {openBubble === 'export' && <ExportPanel song={song} toast={toast} />}
             {openBubble === 'learn' && <LearnPanel />}
             {openBubble === 'ai' && <AIChatPanel song={song} />}
           </div>
@@ -756,6 +774,182 @@ function LearnPanel() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/* ─── Edit Panel (intermediate+) ─── */
+function EditPanel({ song, updateSong, toast }: { song: any; updateSong: any; toast: any }) {
+  return (
+    <div>
+      <p className="text-[12px] text-text3 font-sans mb-3">各パートのコードと音符を細かく編集できます</p>
+      <div className="space-y-3">
+        {song.sections.map((sec: any, si: number) => (
+          <div key={si} className="bg-bg4 rounded-2xl p-3">
+            <div className="text-[13px] font-bold text-amber font-sans mb-2">{sec.name}</div>
+            <div className="flex gap-1.5 flex-wrap mb-2">
+              {sec.measures.map((m: any, mi: number) => (
+                <div key={mi} className="flex flex-col items-center">
+                  <input
+                    className="w-[60px] bg-bg3 border border-border2 rounded-lg text-text px-2 py-1 text-[13px] outline-none font-mono text-center focus:border-amber"
+                    value={m.chord}
+                    onChange={e => updateSong((s: any) => { s.sections[si].measures[mi].chord = e.target.value })}
+                    placeholder="-"
+                  />
+                  <span className="text-[10px] text-text3 font-mono mt-0.5">{m.melNotes?.length || 0}音</span>
+                </div>
+              ))}
+              <button
+                className="w-[60px] h-[32px] border border-dashed border-border2 rounded-lg text-text3 text-[14px] hover:border-amber hover:text-amber"
+                onClick={() => updateSong((s: any) => { s.sections[si].measures.push({ id: gid(), chord: '', melNotes: [] }) })}
+              >
+                +
+              </button>
+            </div>
+            <div className="flex gap-2 text-[11px]">
+              <button
+                className="px-2 py-1 border border-border2 rounded text-text3 hover:border-coral hover:text-coral"
+                onClick={() => {
+                  if (!confirm(`${sec.name}の最後の小節を削除しますか？`)) return
+                  updateSong((s: any) => { if (s.sections[si].measures.length > 1) s.sections[si].measures.pop() })
+                }}
+              >
+                − 小節
+              </button>
+              <button
+                className="px-2 py-1 border border-border2 rounded text-text3 hover:border-amber hover:text-amber"
+                onClick={() => {
+                  updateSong((s: any) => { for (const m of s.sections[si].measures) m.melNotes = [] })
+                  toast(`${sec.name}のメロディをクリア`)
+                }}
+              >
+                メロディ消去
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Accomp Panel (intermediate+) — AI伴奏生成 ─── */
+function AccompPanel({ song, updateSong, toast }: { song: any; updateSong: any; toast: any }) {
+  const [generating, setGenerating] = useState(false)
+
+  const generate = async () => {
+    setGenerating(true)
+    try {
+      const cp = song.sections.map((x: any) => `${x.name}:${x.measures.map((m: any) => m.chord || '-').join('|')}`).join('\n')
+      const sys = `音楽アレンジャー。コード進行に合わせたJ-POP系伴奏をJSONのみで返す。説明・コードブロック不要。
+フォーマット:
+{"piano":{"sections":[{"sectionName":"サビ","measures":[{"chord":"C","rh":[{"pitch":"E4","startBeat":0,"duration":"h"}],"lh":[{"pitch":"C3","startBeat":0,"duration":"q"}]}]}]},
+"bass":{"sections":[{"sectionName":"サビ","measures":[{"chord":"C","notes":[{"pitch":"C2","startBeat":0,"duration":"q"}]}]}]},
+"drums":{"sections":[{"sectionName":"サビ","measures":[{"chord":"C","pattern":{"HH":[1,1,1,1,1,1,1,1],"SD":[0,0,0,0,1,0,0,0],"BD":[1,0,0,0,1,0,0,0]}}]}]}}
+ルール:piano rh=C4以上,lh=C3以下。bass=C1-C3。startBeat=0〜3,duration=w/h/q/8/16。各小節合計4拍。drums=8拍8要素 0/1。各セクション2小節。`
+      const raw = await callGemini(sys, [{ role: 'user', content: `Key:${song.key} BPM:${song.tempo}\n${cp}` }], 1500)
+      const cleaned = raw.replace(/```json|```/g, '').trim()
+      const parsed = JSON.parse(cleaned)
+      updateSong((s: any) => { s.accomp = parsed })
+      toast('伴奏を生成しました')
+    } catch (e) {
+      console.error(e)
+      toast('伴奏生成に失敗しました')
+    }
+    setGenerating(false)
+  }
+
+  return (
+    <div>
+      <p className="text-[13px] text-text2 font-sans mb-3">AIがピアノ・ベース・ドラムの伴奏を作ります</p>
+      <button
+        className="w-full py-3.5 rounded-2xl text-[15px] font-bold font-sans bg-amber text-white shadow-md disabled:opacity-50"
+        onClick={generate}
+        disabled={generating}
+      >
+        {generating ? '生成中...' : 'AI伴奏を作る'}
+      </button>
+      {song.accomp && (
+        <div className="mt-3 p-3 bg-teal/10 border border-teal/30 rounded-2xl">
+          <p className="text-[12px] text-teal font-sans font-bold">伴奏データあり</p>
+          <p className="text-[11px] text-text3 font-sans mt-1">
+            {Object.keys(song.accomp).filter(k => song.accomp[k]).join(' / ')}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── Settings Panel (advanced) — KEY/BPM/拍子 ─── */
+function SettingsPanel({ song, updateSong }: { song: any; updateSong: any }) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="text-[12px] text-text2 font-sans mb-1 block">キー (Key)</label>
+        <select
+          className="w-full bg-bg4 border border-border2 rounded-2xl text-text px-3 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
+          value={song.key}
+          onChange={e => updateSong((s: any) => { s.key = e.target.value })}
+        >
+          {KEYS.map(k => <option key={k} value={k}>{k}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="text-[12px] text-text2 font-sans mb-1 block">テンポ (BPM)</label>
+        <input
+          type="number"
+          className="w-full bg-bg4 border border-border2 rounded-2xl text-text px-3 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
+          value={song.tempo}
+          min={40}
+          max={300}
+          onChange={e => updateSong((s: any) => { s.tempo = parseInt(e.target.value) || 120 })}
+        />
+      </div>
+      <div>
+        <label className="text-[12px] text-text2 font-sans mb-1 block">拍子</label>
+        <select
+          className="w-full bg-bg4 border border-border2 rounded-2xl text-text px-3 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
+          value={song.timeSig ? `${song.timeSig.beats}/${song.timeSig.value}` : '4/4'}
+          onChange={e => {
+            const ts = TIME_SIGNATURES.find(t => t.label === e.target.value)
+            if (ts) updateSong((s: any) => { s.timeSig = { beats: ts.beats, value: ts.value } })
+          }}
+        >
+          {TIME_SIGNATURES.map(ts => (
+            <option key={ts.label} value={ts.label}>{ts.label}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="text-[12px] text-text2 font-sans mb-1 block">曲タイトル</label>
+        <input
+          className="w-full bg-bg4 border border-border2 rounded-2xl text-text px-3 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
+          value={song.title}
+          onChange={e => updateSong((s: any) => { s.title = e.target.value })}
+        />
+      </div>
+    </div>
+  )
+}
+
+/* ─── Export Panel (advanced) — MIDI/MusicXML ─── */
+function ExportPanel({ song, toast }: { song: any; toast: any }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-[13px] text-text2 font-sans">プロの音楽制作ツールに持ち出せます</p>
+      <button
+        className="w-full py-3.5 rounded-2xl text-[15px] font-bold font-sans bg-amber text-white shadow-md"
+        onClick={() => { downloadMidi(song); toast('MIDIをダウンロード。GarageBandで開けます') }}
+      >
+        MIDI で書き出す（GarageBand用）
+      </button>
+      <button
+        className="w-full py-3.5 rounded-2xl text-[15px] font-bold font-sans bg-teal text-white shadow-md"
+        onClick={() => { exportMusicXML(song); toast('MusicXMLをダウンロード。LogicProで開けます') }}
+      >
+        MusicXML で書き出す（LogicPro用）
+      </button>
     </div>
   )
 }
