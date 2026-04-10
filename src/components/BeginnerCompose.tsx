@@ -172,11 +172,18 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
     updateSong((s: any) => {
       s.key = tmpl.key
       s.tempo = tmpl.bpm
-      s.sections = tmpl.sections.map((sec: any) => ({
-        id: gid(), name: sec.name, lyrics: '',
-        measures: sec.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })),
-      }))
-      // 歌詞はsong.lyricsに保持されているので消えない
+      // 初心者向けにセクション名をシンプルに
+      let melodyNum = 0
+      s.sections = tmpl.sections.map((sec: any) => {
+        const isSabi = sec.name.includes('サビ') || sec.name.includes('ラスサビ')
+        melodyNum++
+        return {
+          id: gid(),
+          name: isSabi ? `サビ ★` : `メロディ ${melodyNum}`,
+          lyrics: '',
+          measures: sec.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })),
+        }
+      })
     })
     toast('曲の骨組みができました！次はメロディをつけてみよう')
   }
@@ -209,7 +216,7 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
             onClick={() => {
               setMood({})
               updateSong((s: any) => {
-                s.sections = [{ id: gid(), name: 'イントロ', lyrics: '', measures: Array(4).fill(0).map(() => ({ id: gid(), chord: '', melNotes: [] })) }]
+                s.sections = [{ id: gid(), name: 'メロディ 1', lyrics: '', measures: Array(4).fill(0).map(() => ({ id: gid(), chord: '', melNotes: [] })) }]
                 // 歌詞はsong.lyricsに保持されているので消えない
               })
             }}
@@ -242,10 +249,9 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
                   onClick={() => {
                     updateSong((s: any) => {
                       s.sections = [
-                        { id: gid(), name: 'イントロ', lyrics: '', measures: p.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
-                        { id: gid(), name: 'Aメロ', lyrics: '', measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
-                        { id: gid(), name: 'サビ', lyrics: '', measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
-                        { id: gid(), name: 'アウトロ', lyrics: '', measures: p.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
+                        { id: gid(), name: 'メロディ 1', lyrics: '', measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
+                        { id: gid(), name: 'メロディ 2', lyrics: '', measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
+                        { id: gid(), name: 'サビ ★', lyrics: '', measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
                       ]
                       // 歌詞はsong.lyricsに保持されているので消えない
                     })
