@@ -49,8 +49,8 @@ function AppContent() {
         {song ? (
           <>
             <TopBar onMenuClick={toggleSidebar} onOpenSettings={openSettings} />
-            <TabsBar />
-            <div className="flex-1 overflow-y-auto p-4 max-md:p-3 max-md:pb-20">
+            {level !== 'beginner' && <TabsBar />}
+            <div className={`flex-1 overflow-y-auto p-4 max-md:p-3 ${level !== 'beginner' ? 'max-md:pb-20' : ''}`}>
               {renderTab()}
             </div>
           </>
@@ -68,7 +68,7 @@ function AppContent() {
         )}
       </div>
 
-      <FAB />
+      {level !== 'beginner' && <FAB />}
       <div id="toast" />
       <SettingsModal open={settingsOpen} onClose={closeSettings} />
     </div>

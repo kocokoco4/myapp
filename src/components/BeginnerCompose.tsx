@@ -12,18 +12,19 @@ import { createPitchDetector, type PitchDetector } from '../utils/pitchDetect'
 import { MOOD_CATEGORIES, generateTemplate, type MoodSelection, type MoodCategory } from '../utils/moodTemplates'
 import { downloadMidi } from '../utils/midi'
 import { gid } from '../utils/id'
+import { callGemini } from '../utils/gemini'
 import FinchAvatar from './FinchAvatar'
 
 const CAT_KEYS: MoodCategory[] = ['emotion', 'scene', 'energy', 'relation']
 
-type BubbleId = 'lyrics' | 'chords' | 'melody' | 'mood' | 'dict'
+type BubbleId = 'lyrics' | 'chords' | 'melody' | 'mood' | 'learn' | 'ai'
 
 const BUBBLES: { id: BubbleId; label: string; color: string; desc: string }[] = [
   { id: 'lyrics', label: '歌詞', color: '#50b0e0', desc: '歌いたい言葉を書こう' },
   { id: 'mood', label: '雰囲気', color: '#e0a050', desc: '気分で曲の骨格を作る' },
   { id: 'chords', label: 'コード', color: '#50c878', desc: 'ボタンひとつでコード進行' },
   { id: 'melody', label: 'メロディ', color: '#e080a0', desc: '鍵盤か鼻歌で音を入れる' },
-  { id: 'dict', label: '学ぶ', color: '#9090cc', desc: '音楽の基礎を知ろう' },
+  { id: 'learn', label: '学ぶ', color: '#9090cc', desc: '音楽の基礎とコード辞典' },
 ]
 
 export default function BeginnerCompose() {
@@ -51,10 +52,17 @@ export default function BeginnerCompose() {
 
   return (
     <div className="animate-fi pb-8">
-      {/* Finch greeting */}
+      {/* Finch greeting + AI chat */}
       <div className="text-center mb-6">
-        <div className="animate-float inline-block"><FinchAvatar size={48} mood="wave" /></div>
-        <p className="text-[14px] text-text2 font-sans mt-2">好きなところから始めよう</p>
+        <button
+          className="inline-block group"
+          onClick={() => setOpenBubble(openBubble === 'ai' ? null : 'ai')}
+        >
+          <div className="animate-float"><FinchAvatar size={52} mood={openBubble === 'ai' ? 'happy' : 'wave'} /></div>
+          <p className={`text-[13px] font-sans mt-1.5 transition-colors ${openBubble === 'ai' ? 'text-amber font-bold' : 'text-text3 group-hover:text-amber'}`}>
+            僕に相談
+          </p>
+        </button>
       </div>
 
       {/* Bubble grid */}
@@ -99,7 +107,8 @@ export default function BeginnerCompose() {
             {openBubble === 'mood' && <MoodPanel song={song} updateSong={updateSong} toast={toast} onDone={() => setOpenBubble(null)} />}
             {openBubble === 'chords' && <ChordsPanel song={song} updateSong={updateSong} />}
             {openBubble === 'melody' && <MelodyPanel song={song} updateSong={updateSong} toast={toast} />}
-            {openBubble === 'dict' && <DictPanel />}
+            {openBubble === 'learn' && <LearnPanel />}
+            {openBubble === 'ai' && <AIChatPanel song={song} />}
           </div>
         </div>
       )}
@@ -379,8 +388,77 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
   )
 }
 
-/* ─── Dict Panel (mini) ─── */
-function DictPanel() {
+/* ─── AI Chat Panel (simple) ─── */
+function AIChatPanel({ song }: { song: any }) {
+  const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<{ role: string; text: string }[]>([])
+  const [sending, setSending] = useState(false)
+
+  const send = async () => {
+    const t = input.trim()
+    if (!t || sending) return
+    setInput('')
+    setMessages(prev => [...prev, { role: 'user', text: t }])
+    setSending(true)
+    try {
+      const sys = `初心者向けの作曲アドバイザー。「${song.title}」を制作中。Key:${song.key} BPM:${song.tempo}。やさしい言葉で短く答えて。専門用語は避けて。`
+      const resp = await callGemini(sys, [{ role: 'user', content: t }], 400)
+      setMessages(prev => [...prev, { role: 'ai', text: resp }])
+    } catch {
+      setMessages(prev => [...prev, { role: 'ai', text: 'ごめんね、うまく答えられなかった。もう一度聞いてみて。' }])
+    }
+    setSending(false)
+  }
+
+  return (
+    <div>
+      <div className="space-y-2 mb-3 max-h-[200px] overflow-y-auto">
+        {messages.length === 0 && (
+          <div className="text-[13px] text-text3 font-sans text-center py-3">
+            作曲のことなんでも聞いてね
+          </div>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} className={`text-[13px] font-sans px-3 py-2 rounded-2xl leading-relaxed ${m.role === 'user' ? 'bg-amber/10 text-text ml-8' : 'bg-bg4 text-text2 mr-8'}`}>
+            {m.text}
+          </div>
+        ))}
+        {sending && <div className="text-[12px] text-text3 font-sans animate-pulse px-3">考え中...</div>}
+      </div>
+      <div className="flex gap-2">
+        <input
+          className="flex-1 bg-bg4 border border-border2 rounded-2xl text-text px-4 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
+          placeholder="なんでも聞いてね..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') send() }}
+        />
+        <button
+          className="px-4 py-2.5 bg-amber text-white rounded-2xl text-[13px] font-bold font-sans"
+          onClick={send}
+          disabled={sending}
+        >
+          送信
+        </button>
+      </div>
+      <div className="flex gap-1.5 flex-wrap mt-2">
+        {['コードって何？', 'サビの作り方', 'メロディのコツ'].map(q => (
+          <button
+            key={q}
+            className="text-[11px] px-2.5 py-1 bg-bg4 border border-border2 rounded-full text-text3 font-sans hover:border-amber hover:text-amber"
+            onClick={() => { setInput(q); }}
+          >
+            {q}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Learn Panel (FAQ + chord dict) ─── */
+function LearnPanel() {
+  const [tab, setTab] = useState<'faq' | 'chords'>('faq')
   const BASICS = [
     { q: 'コードって何？', a: '複数の音を同時に鳴らしたもの。Cコード＝ド・ミ・ソの3音。明るいのがメジャー、暗いのがマイナー。' },
     { q: 'キーって何？', a: '曲の中心になる音。Cメジャーなら白鍵だけで弾ける。歌いやすい高さに合わせて変えられる。' },
@@ -391,22 +469,78 @@ function DictPanel() {
   ]
   const [openIdx, setOpenIdx] = useState<number | null>(null)
 
+  const CHORDS = [
+    { name: '王道進行', chords: ['C', 'G', 'Am', 'F'], desc: '日本のヒット曲の黄金パターン' },
+    { name: '小室進行', chords: ['Am', 'F', 'G', 'C'], desc: '90年代J-POPの哀愁疾走パターン' },
+    { name: 'カノン', chords: ['C', 'G', 'Am', 'Em', 'F', 'C', 'F', 'G'], desc: '壮大で美しいクラシック由来' },
+    { name: '丸サ進行', chords: ['FM7', 'Em7', 'Dm7', 'Em7'], desc: 'おしゃれシティポップ' },
+  ]
+
   return (
-    <div className="space-y-2">
-      {BASICS.map((item, i) => (
-        <div key={i} className="bg-bg4 rounded-2xl overflow-hidden">
+    <div>
+      <div className="flex gap-2 mb-3">
+        {([['faq', '基礎知識'], ['chords', 'コード辞典']] as const).map(([id, label]) => (
           <button
-            className="w-full text-left px-4 py-3 text-[13px] font-bold text-text font-sans flex items-center justify-between"
-            onClick={() => setOpenIdx(openIdx === i ? null : i)}
+            key={id}
+            className={`text-[12px] px-3 py-1.5 rounded-xl font-sans border transition-colors
+              ${tab === id ? 'bg-amber/15 border-amber text-amber font-bold' : 'bg-transparent border-border2 text-text3'}`}
+            onClick={() => { setTab(id); setOpenIdx(null) }}
           >
-            {item.q}
-            <span className="text-text3">{openIdx === i ? '▾' : '▸'}</span>
+            {label}
           </button>
-          {openIdx === i && (
-            <div className="px-4 pb-3 text-[12px] text-text2 font-sans leading-relaxed">{item.a}</div>
-          )}
+        ))}
+      </div>
+
+      {tab === 'faq' && (
+        <div className="space-y-2">
+          {BASICS.map((item, i) => (
+            <div key={i} className="bg-bg4 rounded-2xl overflow-hidden">
+              <button
+                className="w-full text-left px-4 py-3 text-[13px] font-bold text-text font-sans flex items-center justify-between"
+                onClick={() => setOpenIdx(openIdx === i ? null : i)}
+              >
+                {item.q}
+                <span className="text-text3">{openIdx === i ? '▾' : '▸'}</span>
+              </button>
+              {openIdx === i && (
+                <div className="px-4 pb-3 text-[12px] text-text2 font-sans leading-relaxed">{item.a}</div>
+              )}
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+
+      {tab === 'chords' && (
+        <div className="space-y-2">
+          {CHORDS.map((item, i) => (
+            <div key={i} className="bg-bg4 rounded-2xl overflow-hidden">
+              <button
+                className="w-full text-left px-4 py-3 flex items-center justify-between"
+                onClick={() => setOpenIdx(openIdx === i ? null : i)}
+              >
+                <div>
+                  <div className="text-[13px] font-bold text-text font-sans">{item.name}</div>
+                  <div className="text-[11px] text-text3 font-sans">{item.desc}</div>
+                </div>
+                <span className="text-text3">{openIdx === i ? '▾' : '▸'}</span>
+              </button>
+              {openIdx === i && (
+                <div className="px-4 pb-3 flex gap-1.5 flex-wrap">
+                  {item.chords.map((c, ci) => (
+                    <button
+                      key={ci}
+                      className="px-3 py-1.5 rounded-xl text-[13px] font-mono border border-amber/40 text-amber bg-amber/5 hover:bg-amber/15 active:scale-95"
+                      onClick={() => playChord(c)}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
