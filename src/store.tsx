@@ -36,7 +36,22 @@ function mkSong(title = '新しい曲'): Song {
 function loadLocal(): { songs: Song[]; curId: string | null } {
   try {
     const d = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || '{}')
-    return { songs: d.songs || [], curId: d.curId || null }
+    const songs: Song[] = d.songs || []
+    // Restore any pending saves from interrupted session
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key?.startsWith('kch_pending_')) {
+        try {
+          const pending = JSON.parse(localStorage.getItem(key)!) as Song
+          const idx = songs.findIndex(s => s.id === pending.id)
+          if (idx >= 0 && pending.updatedAt > songs[idx].updatedAt) {
+            songs[idx] = pending // newer pending data wins
+          }
+          localStorage.removeItem(key)
+        } catch { /* ignore corrupt */ }
+      }
+    }
+    return { songs, curId: d.curId || null }
   } catch {
     return { songs: [], curId: null }
   }
@@ -91,16 +106,34 @@ async function loadFromFirestore(uid: string): Promise<{ songs: Song[]; curId: s
 
 // 1曲をFirestoreに保存（debounce用）
 const songTimers: Record<string, ReturnType<typeof setTimeout>> = {}
+const pendingSaves: Record<string, { uid: string; song: Song }> = {}
 
 function saveSongToFirestore(uid: string, song: Song) {
   if (songTimers[song.id]) clearTimeout(songTimers[song.id])
+  pendingSaves[song.id] = { uid, song }
   songTimers[song.id] = setTimeout(async () => {
+    delete pendingSaves[song.id]
     try {
       await setDoc(doc(songsCol(uid), song.id), song)
     } catch (e) {
       console.error('Firestore save error:', e)
     }
   }, 1000)
+}
+
+// ページ離脱時に未保存データを即座にフラッシュ
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    for (const [id, { song }] of Object.entries(pendingSaves)) {
+      clearTimeout(songTimers[id])
+      // sendBeaconではFirestoreSDKが使えないのでlocalStorageにフォールバック
+      try {
+        const key = `kch_pending_${id}`
+        localStorage.setItem(key, JSON.stringify(song))
+        // 次回起動時に復元される
+      } catch { /* noop */ }
+    }
+  })
 }
 
 function saveCurIdToFirestore(uid: string, curId: string | null) {

@@ -161,8 +161,8 @@ export function playSectionAudio(
         osc.type = 'sine'
         osc.frequency.value = freq
         gain.gain.setValueAtTime(0, nStart)
-        gain.gain.linearRampToValueAtTime(0.18, nStart + 0.01)
-        gain.gain.setValueAtTime(0.14, nStart + nDur * 0.7)
+        gain.gain.linearRampToValueAtTime(0.28, nStart + 0.01)
+        gain.gain.setValueAtTime(0.22, nStart + nDur * 0.7)
         gain.gain.exponentialRampToValueAtTime(0.001, nStart + nDur - 0.01)
         osc.connect(gain)
         gain.connect(ctx.destination)

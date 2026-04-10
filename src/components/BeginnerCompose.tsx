@@ -322,21 +322,23 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
 
   const addNote = useCallback((pitch: string) => {
     updateSong((s: any) => {
-      // Auto-expand: add measure if all are full
-      const sec = s.sections[0]
-      if (!sec) return
-      for (const m of sec.measures) {
-        let sb = 0
-        for (const n of (m.melNotes || [])) sb += (DURATION_BEATS[n.duration] || 1)
-        if (sb + (DURATION_BEATS[dur] || 1) <= 4.01) {
-          if (!m.melNotes) m.melNotes = []
-          m.melNotes.push({ pitch, duration: dur, startBeat: sb })
-          return
+      // Find first empty slot across ALL sections
+      for (const sec of s.sections) {
+        for (const m of sec.measures) {
+          let sb = 0
+          for (const n of (m.melNotes || [])) sb += (DURATION_BEATS[n.duration] || 1)
+          if (sb + (DURATION_BEATS[dur] || 1) <= 4.01) {
+            if (!m.melNotes) m.melNotes = []
+            m.melNotes.push({ pitch, duration: dur, startBeat: sb })
+            return
+          }
         }
       }
-      // All measures full → add new measure
-      const newMeas = { id: gid(), chord: '', melNotes: [{ pitch, duration: dur, startBeat: 0 }] }
-      sec.measures.push(newMeas)
+      // All measures full → add new measure to last section
+      const lastSec = s.sections[s.sections.length - 1]
+      if (lastSec) {
+        lastSec.measures.push({ id: gid(), chord: '', melNotes: [{ pitch, duration: dur, startBeat: 0 }] })
+      }
     })
   }, [dur, updateSong])
 
@@ -436,8 +438,8 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
               } else {
                 const detector = createPitchDetector(pitch => {
                   setDetectedPitch(pitch)
-                  playNote(pitch)
-                  addNote(pitch) // 連続自動入力
+                  // 録音中は音を鳴らさない（オーバーラップ防止）
+                  addNote(pitch)
                 })
                 detectorRef.current = detector
                 try { await detector.start(); setMicActive(true) } catch { toast('マイクへのアクセスが許可されていません') }
