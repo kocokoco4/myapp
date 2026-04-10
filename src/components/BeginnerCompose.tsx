@@ -352,6 +352,21 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
         </div>
       )}
 
+      {/* Key/Tempo/Keyboard explanation */}
+      <div className="bg-amber/8 border border-amber/20 rounded-2xl px-4 py-3 mb-3">
+        <div className="text-[13px] text-text font-sans font-bold mb-1">
+          この曲: {song.key}メジャー / テンポ {song.tempo}
+        </div>
+        <div className="text-[12px] text-text2 font-sans leading-relaxed">
+          テンポ{song.tempo} = 1分間に{song.tempo}回のリズム。
+          {song.tempo < 90 ? 'ゆっくりめの曲' : song.tempo < 130 ? 'ふつうのテンポ' : '速めの曲'}です。
+        </div>
+        <div className="text-[12px] text-text2 font-sans leading-relaxed mt-1">
+          鍵盤の<span className="text-teal font-bold">緑の鍵</span>はこの曲に合う音。
+          迷ったら緑だけ弾けばOK！
+        </div>
+      </div>
+
       {/* Section selector + melody status */}
       {song.sections.length > 1 && (
         <div className="mb-3">
