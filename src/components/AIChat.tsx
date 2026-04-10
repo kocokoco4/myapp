@@ -19,7 +19,7 @@ const HELP_SUGGESTIONS = [
 ]
 
 export default function AIChat({ onOpenSettings }: Props) {
-  const { currentSong, aiHist, setAiHist } = useStore()
+  const { currentSong, aiHist, setAiHist, user } = useStore()
   const { t } = useI18n()
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -33,7 +33,7 @@ export default function AIChat({ onOpenSettings }: Props) {
 
   if (!song) return null
 
-  const hasKey = !!getGeminiKey()
+  const hasKey = !!user || !!getGeminiKey() // ログイン済みならCloud Functions経由でAPIキー不要
 
   // [Webhook候補] AI相談イベントを外部に通知できる
   const send = async (text?: string) => {

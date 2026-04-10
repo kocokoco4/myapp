@@ -98,7 +98,7 @@ export const AI_SUGGESTIONS = [
 // [ZooLab連携ポイント] 将来: ZooLab API Gateway 経由
 export const CONFIG = {
   API_BASE: '',
-  GEMINI_MODELS: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'],
+  GEMINI_MODELS: ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'],
   STORAGE_KEY: 'kch_v4',
   THEME_KEY: 'kch_theme',
   GEMINI_KEY_ST: 'songbook_gemini_key',

@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { useI18n } from '../i18n'
 import { INSTRUMENTS } from '../constants'
 import { callGemini, getGeminiKey } from '../utils/gemini'
+import { auth } from '../firebase'
 import { exportMusicXML } from '../utils/musicxml'
 import { downloadMidi } from '../utils/midi'
 import { singleStaffSVG, grandStaffSVG, drumStaffSVG } from '../utils/staff'
@@ -34,7 +35,7 @@ export default function ArrangeTab({ onOpenSettings }: Props) {
 
   // [Webhook候補] 伴奏生成イベントを外部に通知できる
   const generateAccomp = async () => {
-    if (!getGeminiKey()) { onOpenSettings(); return }
+    if (!auth.currentUser && !getGeminiKey()) { onOpenSettings(); return }
     setGenerating(true)
     const cp = song.sections.map(x => `${x.name}:${x.measures.map(m => m.chord || '-').join('|')}`).join('\n')
     const instrs = song.selInstrs || ['piano', 'bass', 'drums']

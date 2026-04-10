@@ -16,7 +16,7 @@ const db = admin.firestore();
 // 設定: firebase functions:config:set gemini.key="AIzaSy..."
 // または Secret Manager: firebase functions:secrets:set GEMINI_KEY
 
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
 
 interface PlanLimits {
   proposals: number; // -1 = unlimited
