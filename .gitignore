@@ -6,3 +6,5 @@ dist
 functions/lib/
 functions/node_modules/
 functions/.env
+firebase-debug.log
+*.log
