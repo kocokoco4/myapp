@@ -103,6 +103,9 @@ export default function DictTab() {
   }
 
   const handleDeleteProg = async (id: string) => {
+    const prog = myProgs.find(p => p.id === id)
+    if (!prog) return
+    if (!confirm(`「${prog.name}」を削除しますか？この操作は元に戻せません。`)) return
     await deleteCustomProgression(id)
     loadMyProgs()
   }

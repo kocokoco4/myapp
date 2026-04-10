@@ -167,25 +167,30 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
 
   const handleBuild = () => {
     if (!allSelected) return
-    const sel = mood as MoodSelection
-    const tmpl = generateTemplate(sel)
-    updateSong((s: any) => {
-      s.key = tmpl.key
-      s.tempo = tmpl.bpm
-      // 初心者向けにセクション名をシンプルに
-      let melodyNum = 0
-      s.sections = tmpl.sections.map((sec: any) => {
-        const isSabi = sec.name.includes('サビ') || sec.name.includes('ラスサビ')
-        if (!isSabi) melodyNum++
-        return {
-          id: gid(),
-          name: isSabi ? `サビ ★` : `メロディ ${melodyNum}`,
-          lyrics: '',
-          measures: sec.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })),
-        }
+    try {
+      const sel = mood as MoodSelection
+      const tmpl = generateTemplate(sel)
+      updateSong((s: any) => {
+        s.key = tmpl.key
+        s.tempo = tmpl.bpm
+        // 初心者向けにセクション名をシンプルに
+        let melodyNum = 0
+        s.sections = tmpl.sections.map((sec: any) => {
+          const isSabi = sec.name.includes('サビ') || sec.name.includes('ラスサビ')
+          if (!isSabi) melodyNum++
+          return {
+            id: gid(),
+            name: isSabi ? `サビ ★` : `メロディ ${melodyNum}`,
+            lyrics: '',
+            measures: sec.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })),
+          }
+        })
       })
-    })
-    toast('曲の骨組みができました！次はメロディをつけてみよう')
+      toast('曲の骨組みができました！次はメロディをつけてみよう')
+    } catch (e) {
+      console.error('handleBuild error:', e)
+      toast('曲の生成に失敗しました。もう一度お試しください')
+    }
   }
 
   return (
@@ -454,10 +459,12 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
             <button
               className="text-[11px] px-2.5 py-1 rounded-xl font-sans border border-border2 text-text3 hover:border-amber hover:text-amber"
               onClick={() => {
+                const name = song.sections[targetSection]?.name
+                if (!confirm(`${name}のメロディをクリアしますか？`)) return
                 updateSong((s: any) => {
                   for (const m of s.sections[targetSection].measures) { m.melNotes = [] }
                 })
-                toast(`${song.sections[targetSection].name}のメロディをクリアしました`)
+                toast(`${name}のメロディをクリアしました`)
               }}
             >
               やり直す
@@ -470,6 +477,7 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
               className="text-[11px] px-2.5 py-1 rounded-xl font-sans border border-border2 text-text3 hover:border-coral hover:text-coral"
               onClick={() => {
                 const name = song.sections[targetSection]?.name
+                if (!confirm(`「${name}」を削除しますか？`)) return
                 updateSong((s: any) => {
                   s.sections.splice(targetSection, 1)
                   renumberSections(s.sections)
