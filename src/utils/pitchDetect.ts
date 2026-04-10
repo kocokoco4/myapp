@@ -1,6 +1,7 @@
 /**
- * ピッチ検出 — Web Audio API + autocorrelation
- * マイクからリアルタイムで音高を検出し、MIDI音名に変換する
+ * ピッチ検出 — Web Audio API + YIN algorithm
+ * YIN: de Cheveigne & Kawahara (2002) の高精度ピッチ検出
+ * autocorrelationより倍音耐性・ノイズ耐性が大幅に高い
  *
  * [ZooLab連携ポイント] 音声入力は他の音楽系アプリでも再利用可能
  */
@@ -18,40 +19,69 @@ export function freqToNote(freq: number): { note: string; octave: number; cents:
   return { note, octave, cents }
 }
 
-/** Autocorrelation pitch detection */
-function autoCorrelate(buf: Float32Array, sampleRate: number): number {
-  // Not enough signal
+/**
+ * YIN pitch detection algorithm
+ * Reference: "YIN, a fundamental frequency estimator for speech and music"
+ * de Cheveigne & Kawahara, JASA 2002
+ */
+function yinDetect(buf: Float32Array, sampleRate: number): number {
+  const bufSize = buf.length
+  const halfSize = Math.floor(bufSize / 2)
+  const yinThreshold = 0.15 // lower = stricter (0.1-0.2 is good for voice)
+
+  // Check if signal is loud enough
   let rms = 0
-  for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i]
-  rms = Math.sqrt(rms / buf.length)
-  if (rms < 0.01) return -1 // too quiet
+  for (let i = 0; i < bufSize; i++) rms += buf[i] * buf[i]
+  rms = Math.sqrt(rms / bufSize)
+  if (rms < 0.008) return -1 // too quiet
 
-  // Trim silence from edges
-  let r1 = 0, r2 = buf.length - 1
-  const threshold = 0.2
-  for (let i = 0; i < buf.length / 2; i++) { if (Math.abs(buf[i]) < threshold) { r1 = i } else break }
-  for (let i = 1; i < buf.length / 2; i++) { if (Math.abs(buf[buf.length - i]) < threshold) { r2 = buf.length - i } else break }
-  const trimmed = buf.slice(r1, r2)
-  const size = trimmed.length
+  // Step 1: Difference function
+  const diff = new Float32Array(halfSize)
+  for (let tau = 0; tau < halfSize; tau++) {
+    let sum = 0
+    for (let i = 0; i < halfSize; i++) {
+      const d = buf[i] - buf[i + tau]
+      sum += d * d
+    }
+    diff[tau] = sum
+  }
 
-  // Autocorrelation
-  const c = new Float32Array(size)
-  for (let i = 0; i < size; i++) {
-    for (let j = 0; j < size - i; j++) {
-      c[i] += trimmed[j] * trimmed[j + i]
+  // Step 2: Cumulative mean normalized difference function (CMND)
+  const cmnd = new Float32Array(halfSize)
+  cmnd[0] = 1
+  let runningSum = 0
+  for (let tau = 1; tau < halfSize; tau++) {
+    runningSum += diff[tau]
+    cmnd[tau] = diff[tau] * tau / runningSum
+  }
+
+  // Step 3: Absolute threshold
+  // Find the first tau where cmnd drops below threshold
+  let tauEstimate = -1
+  for (let tau = 2; tau < halfSize; tau++) {
+    if (cmnd[tau] < yinThreshold) {
+      // Find the local minimum after this point
+      while (tau + 1 < halfSize && cmnd[tau + 1] < cmnd[tau]) {
+        tau++
+      }
+      tauEstimate = tau
+      break
     }
   }
 
-  // Find first dip then first peak
-  let d = 0
-  while (c[d] > c[d + 1]) d++
-  let maxVal = -1, maxPos = -1
-  for (let i = d; i < size; i++) {
-    if (c[i] > maxVal) { maxVal = c[i]; maxPos = i }
+  if (tauEstimate === -1) return -1 // no pitch found
+
+  // Step 4: Parabolic interpolation for sub-sample accuracy
+  let betterTau = tauEstimate
+  if (tauEstimate > 0 && tauEstimate < halfSize - 1) {
+    const s0 = cmnd[tauEstimate - 1]
+    const s1 = cmnd[tauEstimate]
+    const s2 = cmnd[tauEstimate + 1]
+    const shift = (s0 - s2) / (2 * (s0 - 2 * s1 + s2))
+    if (Math.abs(shift) < 1) betterTau = tauEstimate + shift
   }
 
-  const freq = sampleRate / maxPos
-  return freq
+  return sampleRate / betterTau
 }
 
 export interface PitchDetector {
@@ -79,16 +109,17 @@ export function createPitchDetector(
     if (!analyser || !active) return
     const buf = new Float32Array(analyser.fftSize)
     analyser.getFloatTimeDomainData(buf)
-    const freq = autoCorrelate(buf, audioCtx!.sampleRate)
+    const freq = yinDetect(buf, audioCtx!.sampleRate)
 
     if (freq > 0) {
       const result = freqToNote(freq)
-      if (result && Math.abs(result.cents) < 40) {
+      if (result && Math.abs(result.cents) < 45) {
         const pitch = result.note + result.octave
         if (pitch === lastNote) {
           stableCount++
-          if (stableCount >= 3) { // ~100ms of stability
+          if (stableCount >= 2) { // ~60ms of stability (faster response)
             onPitch(pitch)
+            lastNote = '' // allow re-detection of same note
             stableCount = 0
           }
         } else {
@@ -106,7 +137,7 @@ export function createPitchDetector(
       if (active) return
       audioCtx = new AudioContext()
       analyser = audioCtx.createAnalyser()
-      analyser.fftSize = 2048
+      analyser.fftSize = 4096 // larger = better pitch resolution for voice
 
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const source = audioCtx.createMediaStreamSource(stream)
