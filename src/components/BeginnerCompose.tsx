@@ -150,7 +150,17 @@ function LyricsPanel({ song, updateSong }: { song: any; updateSong: any }) {
 /* MoodPanel removed — integrated into AutoBuildPanel */
 
 /* ─── Auto Build Panel — 雰囲気を選ぶだけで一曲分のコード＋構成が完成 ─── */
+const PRESET_PROGRESSIONS = [
+  { name: '王道進行', desc: '感動系。J-POPヒット曲の定番', chords: ['C', 'G', 'Am', 'F'], mood: '明るい' },
+  { name: '小室進行', desc: '哀愁と疾走感。90年代J-POP', chords: ['Am', 'F', 'G', 'C'], mood: '切ない' },
+  { name: 'カノン進行', desc: '壮大で美しい。クラシック由来', chords: ['C', 'G', 'Am', 'Em', 'F', 'C', 'F', 'G'], mood: '壮大' },
+  { name: '丸サ進行', desc: 'おしゃれシティポップ', chords: ['FM7', 'Em7', 'Dm7', 'Em7'], mood: 'おしゃれ' },
+  { name: '暗い系', desc: 'ダークで情熱的', chords: ['Am', 'G', 'F', 'E'], mood: 'ダーク' },
+  { name: '4-5-3-6', desc: 'ドラマチック。サビにぴったり', chords: ['F', 'G', 'Em', 'Am'], mood: 'ドラマ' },
+]
+
 function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: any; toast: any }) {
+  const [tab, setTab] = useState<'preset' | 'mood'>('preset')
   const [mood, setMood] = useState<Partial<MoodSelection>>({})
   const allSelected = CAT_KEYS.every(k => mood[k])
   const built = song.sections.length > 1 || song.sections[0]?.measures.some((m: any) => m.chord)
@@ -208,31 +218,85 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
         </div>
       ) : (
         <div>
-          <p className="text-[13px] text-text2 font-sans mb-4 leading-relaxed">
-            4つの雰囲気を選ぶだけで、<br/>曲のパート構成・コード進行・テンポが自動で決まります
-          </p>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {CAT_KEYS.map(cat => (
-              <div key={cat}>
-                <label className="text-[12px] text-text2 font-sans mb-1 block">{MOOD_CATEGORIES[cat].label}</label>
-                <select
-                  className="w-full bg-bg4 border border-border2 rounded-2xl text-text px-3 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
-                  value={mood[cat] || ''}
-                  onChange={e => setMood(prev => ({ ...prev, [cat]: e.target.value }))}
-                >
-                  <option value="">選んでね</option>
-                  {MOOD_CATEGORIES[cat].options.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
-              </div>
+          {/* Tab: preset / mood */}
+          <div className="flex gap-2 mb-4">
+            {([['preset', 'おすすめから選ぶ'], ['mood', '雰囲気で自動生成']] as const).map(([id, label]) => (
+              <button
+                key={id}
+                className={`text-[13px] px-4 py-2 rounded-2xl font-sans border transition-colors flex-1
+                  ${tab === id ? 'bg-amber/15 border-amber text-amber font-bold' : 'bg-transparent border-border2 text-text3'}`}
+                onClick={() => setTab(id)}
+              >
+                {label}
+              </button>
             ))}
           </div>
-          {allSelected && (
-            <button
-              className="w-full py-4 rounded-2xl text-[16px] font-bold font-sans bg-amber text-white shadow-lg active:scale-[0.97] transition-all"
-              onClick={handleBuild}
-            >
-              曲にする
-            </button>
+
+          {tab === 'preset' && (
+            <div className="space-y-2">
+              {PRESET_PROGRESSIONS.map(p => (
+                <button
+                  key={p.name}
+                  className="w-full text-left px-4 py-3 bg-bg4 border border-border2 rounded-2xl hover:border-amber hover:shadow-md active:scale-[0.98] transition-all"
+                  onClick={() => {
+                    // Apply as repeating sections
+                    const lyrics = song.sections[0]?.lyrics || ''
+                    updateSong((s: any) => {
+                      s.sections = [
+                        { id: gid(), name: 'イントロ', lyrics: '', measures: p.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
+                        { id: gid(), name: 'Aメロ', lyrics, measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
+                        { id: gid(), name: 'サビ', lyrics: '', measures: [...p.chords, ...p.chords].map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
+                        { id: gid(), name: 'アウトロ', lyrics: '', measures: p.chords.map((c: string) => ({ id: gid(), chord: c, melNotes: [] })) },
+                      ]
+                    })
+                    playChord(p.chords[0])
+                    toast(`「${p.name}」で曲を作りました`)
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[14px] font-bold text-text font-sans">{p.name}</div>
+                      <div className="text-[12px] text-text3 font-sans">{p.desc}</div>
+                    </div>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber/10 text-amber font-sans">{p.mood}</span>
+                  </div>
+                  <div className="flex gap-1.5 mt-2">
+                    {p.chords.map((c, ci) => (
+                      <span key={ci} className="text-[12px] px-2 py-0.5 rounded-lg bg-bg3 text-text2 font-mono border border-border2">{c}</span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {tab === 'mood' && (
+            <div>
+              <p className="text-[12px] text-text3 font-sans mb-3">4つの雰囲気を選ぶと自動でコード進行が作られます</p>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {CAT_KEYS.map(cat => (
+                  <div key={cat}>
+                    <label className="text-[12px] text-text2 font-sans mb-1 block">{MOOD_CATEGORIES[cat].label}</label>
+                    <select
+                      className="w-full bg-bg4 border border-border2 rounded-2xl text-text px-3 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
+                      value={mood[cat] || ''}
+                      onChange={e => setMood(prev => ({ ...prev, [cat]: e.target.value }))}
+                    >
+                      <option value="">選んでね</option>
+                      {MOOD_CATEGORIES[cat].options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              {allSelected && (
+                <button
+                  className="w-full py-4 rounded-2xl text-[16px] font-bold font-sans bg-amber text-white shadow-lg active:scale-[0.97] transition-all"
+                  onClick={handleBuild}
+                >
+                  曲にする
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
