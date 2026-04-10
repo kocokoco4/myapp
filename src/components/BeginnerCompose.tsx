@@ -195,7 +195,13 @@ function AutoBuildPanel({ song, updateSong, toast }: { song: any; updateSong: an
           </div>
           <button
             className="text-[12px] text-text3 font-sans underline"
-            onClick={() => { setMood({}); }}
+            onClick={() => {
+              setMood({})
+              updateSong((s: any) => {
+                const lyrics = s.sections[0]?.lyrics || ''
+                s.sections = [{ id: gid(), name: 'イントロ', lyrics, measures: Array(4).fill(0).map(() => ({ id: gid(), chord: '', melNotes: [] })) }]
+              })
+            }}
           >
             雰囲気を変えて作り直す
           </button>
@@ -272,6 +278,16 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
 
   return (
     <div>
+      {/* Show lyrics for reference while composing melody */}
+      {song.sections[0]?.lyrics && (
+        <div className="bg-bg4 rounded-2xl px-4 py-3 mb-3">
+          <div className="text-[11px] text-text3 font-sans mb-1">歌詞を見ながらメロディをつけよう</div>
+          <div className="text-[14px] text-text font-sans leading-[2] whitespace-pre-wrap max-h-[80px] overflow-y-auto">
+            {song.sections[0].lyrics}
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2 mb-3">
         {([['keyboard', '鍵盤'], ['mic', '鼻歌']] as const).map(([m, label]) => (
           <button
@@ -338,37 +354,35 @@ function MelodyPanel({ song, updateSong, toast }: { song: any; updateSong: any; 
       )}
 
       {mode === 'mic' && (
-        <div className="text-center py-6">
-          {detectedPitch ? (
-            <div className="text-3xl font-mono font-bold text-amber animate-pulse mb-3">{detectedPitch}</div>
-          ) : (
-            <div className="text-[14px] text-text3 font-sans mb-3">{micActive ? '歌ってください...' : 'マイクを開始してください'}</div>
-          )}
-          <div className="flex gap-2 justify-center">
-            <button
-              className={`px-5 py-3 rounded-2xl text-[14px] font-sans font-bold border transition-colors
-                ${micActive ? 'bg-coral/15 border-coral text-coral' : 'bg-teal/15 border-teal text-teal'}`}
-              onClick={async () => {
-                if (micActive) {
-                  detectorRef.current?.stop(); setMicActive(false); setDetectedPitch(null)
-                } else {
-                  const detector = createPitchDetector(pitch => { setDetectedPitch(pitch); playNote(pitch) })
-                  detectorRef.current = detector
-                  try { await detector.start(); setMicActive(true) } catch { toast('マイクへのアクセスが許可されていません') }
-                }
-              }}
-            >
-              {micActive ? '停止' : 'マイク開始'}
-            </button>
-            {detectedPitch && (
-              <button
-                className="px-5 py-3 rounded-2xl text-[14px] font-sans font-bold bg-amber text-white"
-                onClick={() => { if (detectedPitch) addNote(detectedPitch) }}
-              >
-                {detectedPitch} を入力
-              </button>
-            )}
+        <div className="text-center py-4">
+          <div className="text-3xl font-mono font-bold text-amber mb-3 h-10">
+            {detectedPitch ? detectedPitch : <span className="text-text3 text-[14px] font-sans">{micActive ? '歌ってください...' : ''}</span>}
           </div>
+          {micActive && (
+            <div className="w-full h-1.5 bg-bg4 rounded-full mb-3 overflow-hidden">
+              <div className="h-full bg-teal rounded-full animate-pulse" style={{ width: detectedPitch ? '80%' : '20%' }} />
+            </div>
+          )}
+          <button
+            className={`w-full py-4 rounded-2xl text-[16px] font-sans font-bold border transition-all shadow-md active:scale-[0.97]
+              ${micActive ? 'bg-coral text-white border-coral' : 'bg-teal text-white border-teal'}`}
+            onClick={async () => {
+              if (micActive) {
+                detectorRef.current?.stop(); setMicActive(false); setDetectedPitch(null)
+              } else {
+                const detector = createPitchDetector(pitch => {
+                  setDetectedPitch(pitch)
+                  playNote(pitch)
+                  addNote(pitch) // 連続自動入力
+                })
+                detectorRef.current = detector
+                try { await detector.start(); setMicActive(true) } catch { toast('マイクへのアクセスが許可されていません') }
+              }
+            }}
+          >
+            {micActive ? 'ストップ' : 'マイクで歌う'}
+          </button>
+          {!micActive && <p className="text-[12px] text-text3 font-sans mt-2">ボタンを押して歌うと自動で音が入ります</p>}
         </div>
       )}
 
