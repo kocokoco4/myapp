@@ -39,6 +39,29 @@
   --color-amber2: #d89020;
 }
 
+/* ─── Beginner Theme (soft, light blue) ─── */
+[data-theme="beginner"] {
+  --color-bg: #f0f7fc;
+  --color-bg2: #e6f0f8;
+  --color-bg3: #ffffff;
+  --color-bg4: #edf4fa;
+  --color-border: #c8dce8;
+  --color-border2: #b0cce0;
+  --color-text: #2a3a4a;
+  --color-text2: #5a7088;
+  --color-text3: #88a0b8;
+  --color-amber: #3b9fd0;
+  --color-amber2: #50b0e0;
+  --color-teal: #40c8a0;
+  --color-coral: #e87070;
+  --color-green: #50c878;
+  --color-purple: #8888cc;
+}
+
+[data-theme="beginner"] body::before {
+  display: none;
+}
+
 /* ─── Base ─── */
 * {
   -webkit-tap-highlight-color: transparent;
@@ -86,6 +109,19 @@ body::before {
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fi { animation: fi 0.2s ease; }
+
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-4px) rotate(1deg); }
+  75% { transform: translateY(2px) rotate(-1deg); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
 
 /* ─── Toast ─── */
 #toast {

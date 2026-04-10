@@ -224,9 +224,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [user, authLoading])
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
+    // Beginner mode uses its own soft theme
+    const activeTheme = level === 'beginner' ? 'beginner' : theme
+    document.documentElement.setAttribute('data-theme', activeTheme)
     localStorage.setItem(CONFIG.THEME_KEY, theme)
-  }, [theme])
+  }, [theme, level])
 
   // [Webhook候補] データ更新イベントを外部に通知できる
   // localStorage保存（オフラインフォールバック）+ 該当曲だけFirestoreに保存

@@ -20,7 +20,24 @@ export default function BeginnerCompose() {
   if (!song) return null
 
   return (
-    <div className="animate-fi space-y-6 pb-8">
+    <div className="animate-fi space-y-5 pb-8">
+      {/* Progress indicator */}
+      <div className="flex items-center gap-2 px-2">
+        {['歌詞', '雰囲気', 'コード', 'メロディ', '完成'].map((step, i) => {
+          const done = i === 0 ? !!song.sections[0]?.lyrics
+            : i === 1 ? song.sections.length > 1
+            : i === 2 ? song.sections[0]?.measures.some((m: { chord: string }) => m.chord)
+            : i === 3 ? song.sections[0]?.measures.some((m: { melNotes: unknown[] }) => m.melNotes?.length)
+            : false
+          return (
+            <div key={i} className="flex-1 text-center">
+              <div className={`h-1.5 rounded-full mb-1 transition-colors ${done ? 'bg-amber' : 'bg-border2'}`} />
+              <span className={`text-[10px] font-sans ${done ? 'text-amber font-bold' : 'text-text3'}`}>{step}</span>
+            </div>
+          )
+        })}
+      </div>
+
       {/* Step 1: 歌詞 */}
       <StepCard
         finchMood="wave"
@@ -28,7 +45,7 @@ export default function BeginnerCompose() {
         subtitle="思いつくフレーズを自由に書いてみよう"
       >
         <textarea
-          className="bg-bg4 border border-border2 rounded-xl text-text p-4 text-[15px] leading-[2] resize-none outline-none w-full font-sans min-h-[100px] focus:border-amber"
+          className="bg-bg4 border border-border2 rounded-2xl text-text p-4 text-[15px] leading-[2] resize-none outline-none w-full font-sans min-h-[100px] focus:border-amber shadow-inner"
           placeholder="歌詞やフレーズを入力..."
           value={song.sections[0]?.lyrics || ''}
           onChange={e => updateSong(s => { if (s.sections[0]) s.sections[0].lyrics = e.target.value })}
@@ -48,7 +65,7 @@ export default function BeginnerCompose() {
           {QUICK_PROGRESSIONS.map(p => (
             <button
               key={p.label}
-              className="text-[12px] px-3 py-2 bg-bg4 border border-border2 rounded-xl text-text2 cursor-pointer font-sans hover:border-amber hover:text-amber active:scale-95 transition-all"
+              className="text-[13px] px-4 py-2.5 bg-bg4 border border-border2 rounded-2xl text-text2 cursor-pointer font-sans hover:border-amber hover:text-amber hover:shadow-md active:scale-95 transition-all"
               onClick={() => {
                 updateSong(s => {
                   s.sections[0].measures = p.chords.map((c, i) => ({
@@ -99,15 +116,15 @@ function StepCard({ finchMood, title, subtitle, children }: {
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-bg3 border border-border rounded-2xl overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-        <FinchAvatar size={28} mood={finchMood} />
+    <div className="bg-bg3 border border-border rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(100,160,200,0.08)]">
+      <div className="flex items-center gap-3 px-5 py-4">
+        <div className="animate-float"><FinchAvatar size={36} mood={finchMood} /></div>
         <div>
-          <div className="text-[14px] font-bold text-text font-sans">{title}</div>
-          <div className="text-[11px] text-text3 font-sans">{subtitle}</div>
+          <div className="text-[16px] font-bold text-text font-sans">{title}</div>
+          <div className="text-[12px] text-text3 font-sans">{subtitle}</div>
         </div>
       </div>
-      <div className="p-4">
+      <div className="px-5 pb-5">
         {children}
       </div>
     </div>
@@ -147,7 +164,7 @@ function MoodStep({ updateSong, toast }: { song: any; updateSong: any; toast: an
           <div key={cat}>
             <label className="text-[11px] text-text2 font-sans mb-1 block">{MOOD_CATEGORIES[cat].label}</label>
             <select
-              className="w-full bg-bg4 border border-border2 rounded-lg text-text px-2 py-2 text-[13px] outline-none font-sans focus:border-amber"
+              className="w-full bg-bg4 border border-border2 rounded-2xl text-text px-3 py-2.5 text-[14px] outline-none font-sans focus:border-amber"
               value={mood[cat] || ''}
               onChange={e => setMood(prev => ({ ...prev, [cat]: e.target.value }))}
             >
@@ -161,7 +178,7 @@ function MoodStep({ updateSong, toast }: { song: any; updateSong: any; toast: an
       </div>
       {allSelected && (
         <button
-          className="w-full py-3 rounded-xl text-[14px] font-bold font-sans bg-amber text-bg hover:bg-amber2 active:scale-[0.98] transition-all"
+          className="w-full py-3.5 rounded-2xl text-[15px] font-bold font-sans bg-amber text-bg hover:bg-amber2 active:scale-[0.97] transition-all shadow-md"
           onClick={handleGenerate}
         >
           この雰囲気で作る
@@ -372,17 +389,17 @@ function CompleteSection({ song, toast }: { song: any; toast: any }) {
   return (
     <div className="flex gap-3 flex-wrap">
       <button
-        className={`px-5 py-3 rounded-xl text-[14px] font-sans font-bold border transition-colors
-          ${playing ? 'bg-teal/15 border-teal text-teal' : 'bg-teal text-bg border-teal'}`}
+        className={`px-6 py-3.5 rounded-2xl text-[15px] font-sans font-bold border transition-all shadow-md active:scale-[0.97]
+          ${playing ? 'bg-teal/15 border-teal text-teal' : 'bg-teal text-white border-teal'}`}
         onClick={handlePlay}
       >
-        {playing ? '停止' : '再生する'}
+        {playing ? '停止' : '再生してみよう'}
       </button>
       <button
-        className="px-5 py-3 rounded-xl text-[14px] font-sans font-bold bg-amber text-bg"
+        className="px-6 py-3.5 rounded-2xl text-[15px] font-sans font-bold bg-amber text-white shadow-md active:scale-[0.97] transition-all"
         onClick={() => { downloadMidi(song); toast('MIDIをダウンロード。GarageBandで開いてね') }}
       >
-        MIDI書き出し
+        GarageBandへ
       </button>
     </div>
   )
