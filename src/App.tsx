@@ -13,6 +13,7 @@ import ArrangeTab from './components/ArrangeTab'
 import AIChat from './components/AIChat'
 import DictTab from './components/DictTab'
 import BeginnerCompose from './components/BeginnerCompose'
+import LevelSelect from './components/LevelSelect'
 
 function AppContent() {
   const { user, currentSong, curTab, addSong, level } = useStore()
@@ -36,6 +37,9 @@ function AppContent() {
 
   // 未ログイン → ログイン画面
   if (!user) return <LoginScreen />
+
+  // レベル未選択 → レベル選択画面
+  if (!level) return <LevelSelect />
 
   return (
     <div className="flex h-screen" id="app">

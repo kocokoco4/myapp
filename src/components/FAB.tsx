@@ -4,7 +4,11 @@ import { TABS } from '../constants'
 import type { TabId } from '../types'
 
 export default function FAB() {
-  const { curTab, switchTab } = useStore()
+  const { curTab, switchTab, level } = useStore()
+  const visibleTabs = TABS.filter(t => {
+    if (level === 'beginner' && t.id === 'arrange') return false
+    return true
+  })
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -23,7 +27,7 @@ export default function FAB() {
     >
       {open && (
         <div className="absolute bottom-[60px] right-0 bg-bg2 border border-border2 rounded-[14px] p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] min-w-[150px]">
-          {TABS.map(t => (
+          {visibleTabs.map(t => (
             <button
               key={t.id}
               className={`

@@ -119,7 +119,7 @@ interface StoreContextType {
   aiHist: ChatMessage[]
   theme: string
   plan: PlanId
-  level: UserLevel
+  level: UserLevel | ''
   setPlan: (p: PlanId) => void
   setLevel: (l: UserLevel) => void
   usage: { proposals: number; accompGen: number }
@@ -147,7 +147,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [aiHist, setAiHist] = useState<ChatMessage[]>([])
   const [theme, setTheme] = useState(() => localStorage.getItem(CONFIG.THEME_KEY) || 'dark')
   const [plan, setPlanState] = useState<PlanId>('free')
-  const [level, setLevelState] = useState<UserLevel>(() => (localStorage.getItem('kch_level') as UserLevel) || 'advanced')
+  const [level, setLevelState] = useState<UserLevel | ''>(() => (localStorage.getItem('kch_level') as UserLevel) || '')
   const [usage, setUsage] = useState({ proposals: 0, accompGen: 0 })
 
   // Auth state listener

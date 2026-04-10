@@ -52,10 +52,11 @@ interface SectionCardProps {
 }
 
 function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
-  const { currentSong, updateSong, saveOnly, toast } = useStore()
+  const { currentSong, updateSong, saveOnly, toast, level } = useStore()
   const { t } = useI18n()
   const song = currentSong()!
   const sec = song.sections[si]
+  const isAdv = level === 'advanced'
 
   const [openAreas, setOpenAreas] = useState<Record<Area, boolean>>({ lyrics: true, chords: true, melody: false })
   const [myProgs, setMyProgs] = useState<CustomProgression[]>([])
@@ -63,7 +64,7 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
   const [chordSlot, setChordSlot] = useState<number>(0) // 0=前半, 1=後半
   const [notePicker, setNotePicker] = useState<number | null>(null)
   const [npState, setNpState] = useState({ pitch: 'C4', dur: 'q' })
-  const [npInputMode, setNpInputMode] = useState<'buttons' | 'keyboard' | 'mic'>('buttons')
+  const [npInputMode, setNpInputMode] = useState<'buttons' | 'keyboard' | 'mic'>(isAdv ? 'buttons' : 'keyboard')
   const pitchDetectorRef = useRef<PitchDetector | null>(null)
   const [micActive, setMicActive] = useState(false)
   const [detectedPitch, setDetectedPitch] = useState<string | null>(null)
@@ -425,7 +426,7 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
                               {parts[idx] || '-'}
                             </button>
                           ))}
-                          {slotCount < 8 && (
+                          {isAdv && slotCount < 8 && (
                             <button
                               className="w-8 text-[11px] py-1.5 rounded-lg border border-dashed border-border2 text-text3 font-mono hover:border-amber hover:text-amber"
                               onClick={() => {
@@ -624,7 +625,7 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
                     </span>
                     {/* Input mode toggle */}
                     <div className="flex gap-1">
-                      {(['buttons', 'keyboard', 'mic'] as const).map(mode => (
+                      {(['buttons', 'keyboard', 'mic'] as const).filter(m => isAdv || m !== 'buttons').map(mode => (
                         <button
                           key={mode}
                           className={`text-[10px] px-2 py-1 rounded border font-mono
@@ -868,8 +869,9 @@ function SectionCard({ si, songKey, canDelete }: SectionCardProps) {
 
 /* ─────────────── ComposeTab (main) ─────────────── */
 export default function ComposeTab() {
-  const { currentSong, updateSong, saveOnly } = useStore()
+  const { currentSong, updateSong, saveOnly, level } = useStore()
   const song = currentSong()
+  const isAdv2 = level === 'advanced'
   const [playingAll, setPlayingAll] = useState(false)
   const allStopRef = useRef<{ stop: () => void } | null>(null)
 
@@ -943,7 +945,7 @@ export default function ComposeTab() {
             {TIME_SIGNATURES.map(ts => (
               <option key={ts.label} value={ts.label}>{ts.label}</option>
             ))}
-            <option value="custom">カスタム...</option>
+            {isAdv2 && <option value="custom">カスタム...</option>}
           </select>
         </div>
         <button

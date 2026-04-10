@@ -2,11 +2,15 @@ import { useStore } from '../store'
 import { TABS } from '../constants'
 
 export default function TabsBar() {
-  const { curTab, switchTab } = useStore()
+  const { curTab, switchTab, level } = useStore()
+  const visibleTabs = TABS.filter(t => {
+    if (level === 'beginner' && (t.id === 'arrange')) return false
+    return true
+  })
 
   return (
     <div className="flex border-b border-border bg-bg2 shrink-0 overflow-x-auto max-md:hidden [&::-webkit-scrollbar]:h-0">
-      {TABS.map(t => (
+      {visibleTabs.map(t => (
         <button
           key={t.id}
           className={`

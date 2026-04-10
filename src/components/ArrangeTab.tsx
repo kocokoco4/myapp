@@ -14,8 +14,9 @@ interface Props {
 type SubView = 'accomp' | 'chart'
 
 export default function ArrangeTab({ onOpenSettings }: Props) {
-  const { currentSong, updateSong, toast } = useStore()
+  const { currentSong, updateSong, toast, level } = useStore()
   const { t } = useI18n()
+  const isAdv = level === 'advanced'
   const [generating, setGenerating] = useState(false)
   const [subView, setSubView] = useState<SubView>('accomp')
   const song = currentSong()
@@ -128,12 +129,14 @@ export default function ArrangeTab({ onOpenSettings }: Props) {
             </button>
             {ac && (
               <>
-                <button
-                  className="px-4 py-2 bg-teal text-bg rounded-lg font-bold text-xs cursor-pointer border-none"
-                  onClick={() => { exportMusicXML(song); toast(t('arrange.musicxmlHint')) }}
-                >
-                  {t('arrange.musicxml')}
-                </button>
+                {isAdv && (
+                  <button
+                    className="px-4 py-2 bg-teal text-bg rounded-lg font-bold text-xs cursor-pointer border-none"
+                    onClick={() => { exportMusicXML(song); toast(t('arrange.musicxmlHint')) }}
+                  >
+                    {t('arrange.musicxml')}
+                  </button>
+                )}
                 <button
                   className="px-4 py-2 bg-amber text-bg rounded-lg font-bold text-xs cursor-pointer border-none"
                   onClick={() => { downloadMidi(song); toast(t('arrange.midiHint')) }}
