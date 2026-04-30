@@ -101,6 +101,29 @@ export default function SettingsModal({ open, onClose }: Props) {
           <button className="bg-transparent border-none text-text2 cursor-pointer text-lg p-1" onClick={onClose}>✕</button>
         </div>
 
+        {/* 使い方レベル切替（通常設定） */}
+        <div className="bg-bg4 border border-border2 rounded-[10px] p-3.5 mb-3.5">
+          <div className="text-[12px] font-bold text-amber font-sans mb-1">使い方レベル</div>
+          <div className="text-[11px] text-text3 font-sans mb-2.5">画面の見た目が変わります。慣れてきたら「じゆうに」へ</div>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              ['beginner', 'はじめて', '円ボタン'],
+              ['intermediate', 'なれてきた', 'タブ式'],
+              ['advanced', 'じゆうに', 'タブ式'],
+            ] as const).map(([lv, label, hint]) => (
+              <button
+                key={lv}
+                className={`px-2 py-2 rounded-lg text-[12px] font-sans border transition-colors
+                  ${level === lv ? 'bg-amber/15 border-amber text-amber font-bold' : 'bg-transparent border-border2 text-text3 hover:border-amber'}`}
+                onClick={() => setLevel(lv)}
+              >
+                <div>{label}</div>
+                <div className="text-[10px] opacity-70 mt-0.5">{hint}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Advanced toggle */}
         <button
           className="w-full text-left text-[11px] text-text3 font-mono mb-2 hover:text-text2"
